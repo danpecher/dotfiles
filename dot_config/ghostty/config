@@ -17,7 +17,7 @@ font-family-bold-italic = "JetBrainsMono Nerd Font"
 # Theme & Colors
 # =============================================================================
 # Popular themes: catppuccin-mocha, tokyonight, dracula, nord, gruvbox-dark
-theme = catppuccin-mocha
+# theme = catppuccin-mocha
 
 # Background opacity (0.0 - 1.0)
 background-opacity = 0.95
@@ -102,12 +102,6 @@ keybind = cmd+k=clear_screen
 clipboard-read = allow
 clipboard-write = allow
 clipboard-paste-protection = true
-
-# =============================================================================
-# Bell
-# =============================================================================
-audible-bell = false
-visual-bell = true
 
 # =============================================================================
 # Performance
