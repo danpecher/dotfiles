@@ -1,0 +1,150 @@
+# ~/.zshrc - Zsh configuration managed by chezmoi
+
+# =============================================================================
+# Homebrew
+# =============================================================================
+if [[ -f "/opt/homebrew/bin/brew" ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -f "/usr/local/bin/brew" ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+# =============================================================================
+# mise - Development tool version manager
+# =============================================================================
+if command -v mise &>/dev/null; then
+    eval "$(mise activate zsh)"
+fi
+
+# =============================================================================
+# Prompt - Starship
+# =============================================================================
+if command -v starship &>/dev/null; then
+    eval "$(starship init zsh)"
+fi
+
+# =============================================================================
+# Navigation
+# =============================================================================
+# zoxide - smarter cd
+if command -v zoxide &>/dev/null; then
+    eval "$(zoxide init zsh)"
+fi
+
+# fzf - fuzzy finder
+if [[ -f ~/.fzf.zsh ]]; then
+    source ~/.fzf.zsh
+fi
+
+# =============================================================================
+# History
+# =============================================================================
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt EXTENDED_HISTORY          # Write the history file in the ":start:elapsed;command" format.
+setopt INC_APPEND_HISTORY        # Write to the history file immediately, not when the shell exits.
+setopt SHARE_HISTORY             # Share history between all sessions.
+setopt HIST_EXPIRE_DUPS_FIRST    # Expire duplicate entries first when trimming history.
+setopt HIST_IGNORE_DUPS          # Don't record an entry that was just recorded again.
+setopt HIST_IGNORE_ALL_DUPS      # Delete old recorded entry if new entry is a duplicate.
+setopt HIST_FIND_NO_DUPS         # Do not display a line previously found.
+setopt HIST_IGNORE_SPACE         # Don't record an entry starting with a space.
+setopt HIST_SAVE_NO_DUPS         # Don't write duplicate entries in the history file.
+setopt HIST_REDUCE_BLANKS        # Remove superfluous blanks before recording entry.
+
+# =============================================================================
+# Aliases
+# =============================================================================
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# List files
+if command -v eza &>/dev/null; then
+    alias ls='eza'
+    alias ll='eza -la --icons --git'
+    alias la='eza -a --icons'
+    alias lt='eza --tree --icons'
+else
+    alias ll='ls -lah'
+    alias la='ls -A'
+fi
+
+# Better defaults
+if command -v bat &>/dev/null; then
+    alias cat='bat'
+fi
+alias find="fd"
+alias grep="rg"
+
+# Git
+alias g='git'
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gd='git diff'
+alias gco='git checkout'
+alias gb='git branch'
+alias glog='git log --oneline --graph --decorate'
+
+# GitHub CLI
+alias ghpr='gh pr create'
+alias ghpv='gh pr view --web'
+
+# lazygit
+alias lg='lazygit'
+
+# Shortcuts
+alias c='clear'
+alias h='history'
+alias j='jobs -l'
+alias path='echo -e ${PATH//:/\\n}'
+alias now='date +"%T"'
+alias today='date +"%Y-%m-%d"'
+
+# Safety
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Use trash instead of rm when available
+if command -v trash &>/dev/null; then
+    alias rm='trash'
+fi
+
+# Quick edit
+alias zshrc='${EDITOR:-code} ~/.zshrc'
+alias reload='source ~/.zshrc'
+
+# =============================================================================
+# Zsh Plugins (via Homebrew)
+# =============================================================================
+# Autosuggestions
+if [[ -f $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+    source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+
+# Syntax highlighting (must be last)
+if [[ -f $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+    source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+# =============================================================================
+# Completion
+# =============================================================================
+autoload -Uz compinit
+compinit
+
+# Case-insensitive completion
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+
+# =============================================================================
+# Local configuration (not managed by chezmoi)
+# =============================================================================
+if [[ -f ~/.zshrc.local ]]; then
+    source ~/.zshrc.local
+fi

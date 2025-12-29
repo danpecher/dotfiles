@@ -1,0 +1,85 @@
+# Git configuration managed by chezmoi
+# This is a template that uses chezmoi variables
+
+[user]
+    name = {{ .name | quote }}
+    email = {{ .email | quote }}
+
+[init]
+    defaultBranch = main
+
+[core]
+    editor = nvim
+    pager = delta
+    excludesfile = ~/.gitignore_global
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true
+    dark = true
+    line-numbers = true
+
+[pull]
+    rebase = true
+
+[push]
+    default = current
+    autoSetupRemote = true
+
+[fetch]
+    prune = true
+
+[rebase]
+    autoStash = true
+
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+
+[alias]
+    # Status
+    st = status -sb
+
+    # Commit
+    ci = commit
+    cm = commit -m
+    ca = commit --amend
+
+    # Branch
+    br = branch
+    co = checkout
+    sw = switch
+
+    # Log
+    lg = log --oneline --graph --decorate
+    ll = log --pretty=format:'%C(yellow)%h%Creset %s %C(cyan)<%an>%Creset %C(green)(%cr)%Creset' --abbrev-commit
+
+    # Diff
+    df = diff
+    dc = diff --cached
+
+    # Reset
+    undo = reset HEAD~1 --mixed
+
+    # Stash
+    sl = stash list
+    sp = stash pop
+    ss = stash save
+
+    # Clean up
+    cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master' | xargs -n 1 git branch -d"
+
+[credential]
+    helper = osxkeychain
+
+[url "git@github.com:"]
+    insteadOf = https://github.com/
+
+{{ if .github_username -}}
+[github]
+    user = {{ .github_username | quote }}
+{{- end }}

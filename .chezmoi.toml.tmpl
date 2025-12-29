@@ -1,0 +1,14 @@
+# chezmoi configuration
+# This template is used to generate ~/.config/chezmoi/chezmoi.toml
+
+[data]
+    name = "{{ promptStringOnce . "name" "Your full name" }}"
+    email = "{{ promptStringOnce . "email" "Your email address" }}"
+    github_username = "{{ promptStringOnce . "github_username" "Your GitHub username" }}"
+
+[git]
+    autoCommit = false
+    autoPush = false
+
+[diff]
+    pager = "diff-so-fancy"

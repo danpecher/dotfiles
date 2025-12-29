@@ -1,0 +1,37 @@
+# mise global configuration
+# Managed by chezmoi
+
+[settings]
+auto_install = true
+verbose = false
+
+[tools]
+node = "lts"
+python = "latest"
+ruby = "latest"
+go = "latest"
+rust = "stable"
+java = "latest"
+bun = "latest"
+
+[env]
+EDITOR = "nvim"
+VISUAL = "nvim"
+PAGER = "less"
+LESS = "-R"  # enables color output
+LANG = "en_US.UTF-8"
+LC_ALL = "en_US.UTF-8"
+CLICOLOR = "1"  # colored ls output on macOS
+GREP_OPTIONS = "--color=auto"
+HOMEBREW_NO_ANALYTICS = "1"
+
+# Node
+NODE_OPTIONS = "--max-old-space-size=4096"
+
+# Python
+PYTHONDONTWRITEBYTECODE = "1"  # no .pyc files
+PIP_REQUIRE_VIRTUALENV = "true"  # prevent accidental global installs
+
+# Go
+GOPATH = "{{env.HOME}}/go"
+GOBIN = "{{env.HOME}}/go/bin"
