@@ -10,8 +10,8 @@ node = "lts"
 python = "latest"
 ruby = "latest"
 go = "latest"
-rust = "stable"
-java = "latest"
+# rust = "stable"
+# java = "latest"
 bun = "latest"
 
 [env]
