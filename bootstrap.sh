@@ -67,12 +67,26 @@ else
 fi
 
 # =============================================================================
-# Step 3: Bootstrap nix-darwin
+# Step 3: Clone dotfiles repository
+# =============================================================================
+DOTFILES_DIR="$HOME/code/dotfiles"
+
+info "Checking dotfiles repository..."
+
+if [[ ! -d "$DOTFILES_DIR" ]]; then
+    info "Cloning dotfiles repository..."
+    mkdir -p "$HOME/code"
+    git clone https://github.com/danpecher/dotfiles.git "$DOTFILES_DIR"
+    success "Dotfiles cloned to $DOTFILES_DIR"
+else
+    success "Dotfiles already present at $DOTFILES_DIR"
+fi
+
+# =============================================================================
+# Step 4: Bootstrap nix-darwin
 # =============================================================================
 info "Bootstrapping nix-darwin..."
 
-# Get the directory where this script is located
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DOTFILES_DIR"
 
 # First time setup - use nix run to bootstrap
