@@ -101,6 +101,7 @@ cask "font-symbols-only-nerd-font"
 vscode "vscodevim.vim"
 vscode "eamodio.gitlens"
 vscode "bbenoist.nix"
+vscode "anthropic.claude-code"
 
 # =============================================================================
 # Mac App Store Apps (requires `mas` and being signed into App Store)

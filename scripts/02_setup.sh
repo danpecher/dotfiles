@@ -132,9 +132,42 @@ setup_fzf() {
     fi
 }
 
+# Install Xcode via xcodes
+setup_xcode() {
+    if ! command -v xcodes &>/dev/null; then
+        warn "xcodes not found - should have been installed via Brewfile"
+        return
+    fi
+
+    if [[ -d "/Applications/Xcode.app" ]]; then
+        success "Xcode already installed"
+    else
+        info "Installing latest Xcode via xcodes (this may take a while)..."
+        info "Note: You may be prompted to sign in with your Apple ID"
+        xcodes install --latest --experimental-unxip
+        success "Xcode installed"
+    fi
+
+    # Set Xcode as active developer directory
+    if [[ -d "/Applications/Xcode.app" ]]; then
+        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        success "Xcode set as active developer directory"
+    fi
+
+    # Accept Xcode license
+    if command -v xcodebuild &>/dev/null; then
+        if ! sudo xcodebuild -license check &>/dev/null 2>&1; then
+            info "Accepting Xcode license..."
+            sudo xcodebuild -license accept
+            success "Xcode license accepted"
+        fi
+    fi
+}
+
 # Run setup steps
 setup_ssh
 setup_chezmoi
+setup_xcode
 setup_mise
 setup_shell
 setup_fzf
