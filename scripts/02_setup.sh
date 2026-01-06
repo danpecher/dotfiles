@@ -1,6 +1,9 @@
 #!/bin/bash
 #
-# Setup script - Install packages, chezmoi, mise, and configure shell
+# Setup script - Install packages, development tools, and configure shell
+#
+# This script is called by 01_bootstrap.sh but can also be run standalone
+# after dotfiles have been applied via chezmoi.
 #
 
 set -e
@@ -14,7 +17,6 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
-DOTFILES_REPO="${DOTFILES_REPO:-danpecher/dotfiles}"
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
@@ -29,6 +31,8 @@ fi
 # Ensure Homebrew is in PATH
 if [[ -f "/opt/homebrew/bin/brew" ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -f "/usr/local/bin/brew" ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
 fi
 
 echo ""
@@ -74,23 +78,6 @@ setup_ssh() {
     else
         success "SSH key already exists"
     fi
-}
-
-# Setup chezmoi
-setup_chezmoi() {
-    if ! command -v chezmoi &>/dev/null; then
-        warn "chezmoi not found"
-        return
-    fi
-
-    if [[ -d ~/.local/share/chezmoi ]]; then
-        info "Updating dotfiles with chezmoi..."
-        chezmoi update
-    else
-        info "Initializing chezmoi with dotfiles..."
-        chezmoi init --apply "$DOTFILES_REPO"
-    fi
-    success "Dotfiles applied via chezmoi"
 }
 
 # Setup mise
@@ -166,13 +153,11 @@ setup_xcode() {
 
 # Run setup steps
 setup_ssh
-setup_chezmoi
 setup_xcode
 setup_mise
 setup_shell
 setup_fzf
 
 echo ""
-success "Setup complete! Run 03_macos-defaults.sh to apply macOS preferences."
-info "Restart your terminal or run: source ~/.zshrc"
+success "Setup complete!"
 echo ""
