@@ -52,10 +52,10 @@ preset = 'qwerty'
 [gaps]
 inner.horizontal = 8
 inner.vertical = 8
-outer.left = 16
-outer.bottom = 16
-outer.top = 16
-outer.right = 16
+outer.left = 8
+outer.bottom = 8
+outer.top = 8
+outer.right = 8
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -126,7 +126,7 @@ alt-tab = 'workspace-back-and-forth'
 alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#mode
-alt-shift-semicolon = 'mode service'
+ctrl-alt-shift-cmd-semicolon = 'mode service'
 
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -140,14 +140,10 @@ f = [
 backspace = ['close-all-windows-but-current', 'mode main']
 
 
-alt-shift-h = ['join-with left', 'mode main']
-alt-shift-j = ['join-with down', 'mode main']
-alt-shift-k = ['join-with up', 'mode main']
-alt-shift-l = ['join-with right', 'mode main']
-
-down = 'volume down'
-up = 'volume up'
-shift-down = ['volume set 0', 'mode main']
+ctrl-alt-shift-cmd-h = ['join-with left', 'mode main']
+ctrl-alt-shift-cmd-j = ['join-with down', 'mode main']
+ctrl-alt-shift-cmd-k = ['join-with up', 'mode main']
+ctrl-alt-shift-cmd-l = ['join-with right', 'mode main']
 
 ### Custom
 [[on-window-detected]]
@@ -186,6 +182,11 @@ run = "move-node-to-workspace Web"
 [[on-window-detected]]
 if.app-id = "com.DanPristupov.Fork"
 run = ['layout floating', 'move-node-to-workspace Git']
+
+# --- Workspace: Safari ---
+[[on-window-detected]]
+if.app-id = "com.apple.Safari"
+run = "move-node-to-workspace Web"
 
 # --- Workspace: Communication ---
 [[on-window-detected]]

@@ -106,15 +106,10 @@ alias path='echo -e ${PATH//:/\\n}'
 alias now='date +"%T"'
 alias today='date +"%Y-%m-%d"'
 
-# Safety
-alias rm='rm -i'
+# Safety (use trash instead of rm)
+alias rm='trash'
 alias cp='cp -i'
 alias mv='mv -i'
-
-# Use trash instead of rm when available
-if command -v trash &>/dev/null; then
-    alias rm='trash'
-fi
 
 # Quick edit
 alias zshrc='${EDITOR:-code} ~/.zshrc'

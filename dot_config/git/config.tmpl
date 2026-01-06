@@ -8,6 +8,12 @@
 [init]
     defaultBranch = main
 
+[log]
+    date = iso
+
+[trim]
+    bases = "develop,master,main"
+
 [core]
     editor = nvim
     pager = delta
@@ -72,6 +78,13 @@
 
     # Clean up
     cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master' | xargs -n 1 git branch -d"
+
+    # Submodules
+    update = submodule update --init --recursive
+    foreach = submodule foreach
+
+    # Amend
+    amend = commit --amend -m
 
 [credential]
     helper = osxkeychain
