@@ -8,10 +8,10 @@ verbose = false
 [tools]
 node = "lts"
 python = "latest"
-ruby = "latest"
-go = "latest"
-rust = "stable"
-java = "latest"
+# ruby = "3"
+# go = "latest"
+# rust = "stable"
+# java = "latest"
 bun = "latest"
 
 [env]
