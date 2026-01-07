@@ -59,6 +59,7 @@ brew "starship"          # Cross-shell prompt
 brew "neovim"            # Modern vim
 brew "lazygit"           # Terminal UI for git
 brew "git-delta"         # Better git diffs
+brew "diff-so-fancy"     # Better diff output (used by chezmoi)
 brew "xcodes"            # Xcode version manager
 
 # =============================================================================
