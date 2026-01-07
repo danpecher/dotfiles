@@ -103,6 +103,49 @@ defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 defaults write com.apple.dock tilesize -int 48
 
+# Set Dock apps (persistent-apps)
+info "Setting Dock apps..."
+
+# Helper function to create a Dock app entry
+dock_app() {
+    local app_path="$1"
+    if [[ -d "$app_path" ]]; then
+        echo "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>$app_path</string><key>_CFURLStringType</key><integer>0</integer></dict></dict></dict>"
+    fi
+}
+
+# Helper function to create a Dock folder entry
+dock_folder() {
+    local folder_path="$1"
+    local arrangement="${2:-1}"  # 1=name, 2=date added, 3=date modified, 4=date created, 5=kind
+    local displayas="${3:-0}"    # 0=stack, 1=folder
+    local showas="${4:-2}"       # 0=auto, 1=fan, 2=grid, 3=list
+    if [[ -d "$folder_path" ]]; then
+        echo "<dict><key>tile-data</key><dict><key>arrangement</key><integer>$arrangement</integer><key>displayas</key><integer>$displayas</integer><key>file-data</key><dict><key>_CFURLString</key><string>file://$folder_path/</string><key>_CFURLStringType</key><integer>15</integer></dict><key>showas</key><integer>$showas</integer></dict><key>tile-type</key><string>directory-tile</string></dict>"
+    fi
+}
+
+# Build persistent-apps array
+persistent_apps=""
+for app in "/Applications/Ghostty.app" \
+           "/Applications/Notion.app" \
+           "/System/Cryptexes/App/System/Applications/Safari.app" \
+           "/Applications/Visual Studio Code.app"; do
+    entry=$(dock_app "$app")
+    if [[ -n "$entry" ]]; then
+        persistent_apps+="$entry"
+    fi
+done
+
+# Build persistent-others array (folders on the right side)
+persistent_others=""
+persistent_others+=$(dock_folder "$HOME/Downloads" 2 0 2)  # Sort by date added, stack, grid
+persistent_others+=$(dock_folder "$HOME/Desktop" 1 0 2)   # Sort by name, stack, grid
+
+# Apply to Dock
+defaults write com.apple.dock persistent-apps -array $persistent_apps
+defaults write com.apple.dock persistent-others -array $persistent_others
+
 success "Dock configured"
 
 ###############################################################################
