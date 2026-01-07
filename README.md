@@ -7,7 +7,7 @@ Personal macOS configuration managed with [chezmoi](https://chezmoi.io/).
 Run this on a fresh macOS installation:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh | bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)"
 ```
 
 This will:
