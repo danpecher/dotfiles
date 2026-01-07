@@ -148,19 +148,24 @@ setup_xcode() {
         return
     fi
 
-    if [[ -d "/Applications/Xcode.app" ]]; then
-        success "Xcode already installed"
-    else
+    # Find any Xcode installation (xcodes uses versioned names like Xcode-16.2.0.app)
+    local xcode_app
+    xcode_app=$(find /Applications -maxdepth 1 -name "Xcode*.app" -type d 2>/dev/null | head -1)
+
+    if [[ -z "$xcode_app" ]]; then
         info "Installing latest Xcode via xcodes (this may take a while)..."
         info "Note: You may be prompted to sign in with your Apple ID"
         xcodes install --latest --experimental-unxip
+        xcode_app=$(find /Applications -maxdepth 1 -name "Xcode*.app" -type d 2>/dev/null | head -1)
         success "Xcode installed"
+    else
+        success "Xcode already installed: $(basename "$xcode_app")"
     fi
 
     # Set Xcode as active developer directory (must happen before xcodebuild commands)
-    if [[ -d "/Applications/Xcode.app/Contents/Developer" ]]; then
+    if [[ -n "$xcode_app" && -d "$xcode_app/Contents/Developer" ]]; then
         info "Setting Xcode as active developer directory..."
-        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        sudo xcode-select -s "$xcode_app/Contents/Developer"
         success "Xcode set as active developer directory"
 
         # Accept Xcode license
@@ -173,7 +178,7 @@ setup_xcode() {
         fi
     else
         warn "Xcode Developer directory not found - Xcode may need to be reinstalled"
-        warn "Try: rm -rf /Applications/Xcode.app && xcodes install --latest"
+        warn "Try: xcodes install --latest"
     fi
 }
 
