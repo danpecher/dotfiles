@@ -43,6 +43,35 @@ if [[ ! -t 0 ]]; then
     error "This script requires interactive input for sudo prompts.\nPlease run with: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)\""
 fi
 
+# Setup SSH key early (needed because git config rewrites HTTPS to SSH)
+if [[ ! -f ~/.ssh/id_ed25519 ]]; then
+    info "Generating SSH key (needed for GitHub access)..."
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
+
+    read -p "Enter your email for SSH key: " ssh_email
+    ssh-keygen -t ed25519 -C "$ssh_email" -f ~/.ssh/id_ed25519
+
+    # Add to keychain
+    eval "$(ssh-agent -s)"
+    ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+
+    success "SSH key generated"
+    echo ""
+    warn "Add this SSH key to GitHub before continuing:"
+    echo ""
+    cat ~/.ssh/id_ed25519.pub
+    echo ""
+    info "Go to: https://github.com/settings/keys"
+    echo ""
+    read -p "Press Enter after adding the key to GitHub..."
+else
+    success "SSH key already exists"
+    # Ensure key is in agent
+    eval "$(ssh-agent -s)" &>/dev/null
+    ssh-add --apple-use-keychain ~/.ssh/id_ed25519 &>/dev/null || true
+fi
+
 # Install Xcode Command Line Tools
 if xcode-select -p &>/dev/null; then
     success "Xcode Command Line Tools already installed"
