@@ -106,45 +106,54 @@ defaults write com.apple.dock tilesize -int 48
 # Set Dock apps (persistent-apps)
 info "Setting Dock apps..."
 
-# Helper function to create a Dock app entry
-dock_app() {
+DOCK_PLIST="$HOME/Library/Preferences/com.apple.dock.plist"
+
+# Helper function to add an app to the Dock
+add_dock_app() {
     local app_path="$1"
     if [[ -d "$app_path" ]]; then
-        echo "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>$app_path</string><key>_CFURLStringType</key><integer>0</integer></dict></dict></dict>"
+        /usr/libexec/PlistBuddy -c "Add :persistent-apps: dict" "$DOCK_PLIST" 2>/dev/null
+        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data dict" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data:file-data dict" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data:file-data:_CFURLString string $app_path" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data:file-data:_CFURLStringType integer 0" "$DOCK_PLIST"
     fi
 }
 
-# Helper function to create a Dock folder entry
-dock_folder() {
+# Helper function to add a folder to the Dock
+add_dock_folder() {
     local folder_path="$1"
     local arrangement="${2:-1}"  # 1=name, 2=date added, 3=date modified, 4=date created, 5=kind
     local displayas="${3:-0}"    # 0=stack, 1=folder
     local showas="${4:-2}"       # 0=auto, 1=fan, 2=grid, 3=list
     if [[ -d "$folder_path" ]]; then
-        echo "<dict><key>tile-data</key><dict><key>arrangement</key><integer>$arrangement</integer><key>displayas</key><integer>$displayas</integer><key>file-data</key><dict><key>_CFURLString</key><string>file://$folder_path/</string><key>_CFURLStringType</key><integer>15</integer></dict><key>showas</key><integer>$showas</integer></dict><key>tile-type</key><string>directory-tile</string></dict>"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others: dict" "$DOCK_PLIST" 2>/dev/null
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data dict" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:arrangement integer $arrangement" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:displayas integer $displayas" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:showas integer $showas" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:file-data dict" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:file-data:_CFURLString string file://$folder_path/" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:file-data:_CFURLStringType integer 15" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-type string directory-tile" "$DOCK_PLIST"
     fi
 }
 
-# Build persistent-apps array
-persistent_apps=""
-for app in "/Applications/Ghostty.app" \
-           "/Applications/Notion.app" \
-           "/System/Cryptexes/App/System/Applications/Safari.app" \
-           "/Applications/Visual Studio Code.app"; do
-    entry=$(dock_app "$app")
-    if [[ -n "$entry" ]]; then
-        persistent_apps+="$entry"
-    fi
-done
+# Clear existing persistent-apps and persistent-others
+/usr/libexec/PlistBuddy -c "Delete :persistent-apps" "$DOCK_PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Delete :persistent-others" "$DOCK_PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :persistent-apps array" "$DOCK_PLIST"
+/usr/libexec/PlistBuddy -c "Add :persistent-others array" "$DOCK_PLIST"
 
-# Build persistent-others array (folders on the right side)
-persistent_others=""
-persistent_others+=$(dock_folder "$HOME/Downloads" 2 0 2)  # Sort by date added, stack, grid
-persistent_others+=$(dock_folder "$HOME/Desktop" 1 0 2)   # Sort by name, stack, grid
+# Add apps to Dock
+add_dock_app "/Applications/Ghostty.app"
+add_dock_app "/Applications/Notion.app"
+add_dock_app "/System/Cryptexes/App/System/Applications/Safari.app"
+add_dock_app "/Applications/Visual Studio Code.app"
 
-# Apply to Dock
-defaults write com.apple.dock persistent-apps -array $persistent_apps
-defaults write com.apple.dock persistent-others -array $persistent_others
+# Add folders to Dock (right side)
+add_dock_folder "$HOME/Downloads" 2 0 2  # Sort by date added, stack, grid
+add_dock_folder "$HOME/Desktop" 1 0 2    # Sort by name, stack, grid
 
 success "Dock configured"
 
