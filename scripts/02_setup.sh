@@ -158,7 +158,7 @@ setup_xcode() {
     fi
 
     # Set Xcode as active developer directory (must happen before xcodebuild commands)
-    if [[ -d "/Applications/Xcode.app" ]]; then
+    if [[ -d "/Applications/Xcode.app/Contents/Developer" ]]; then
         info "Setting Xcode as active developer directory..."
         sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
         success "Xcode set as active developer directory"
@@ -171,6 +171,9 @@ setup_xcode() {
         else
             success "Xcode license already accepted"
         fi
+    else
+        warn "Xcode Developer directory not found - Xcode may need to be reinstalled"
+        warn "Try: rm -rf /Applications/Xcode.app && xcodes install --latest"
     fi
 }
 
