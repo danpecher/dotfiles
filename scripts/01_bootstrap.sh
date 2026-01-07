@@ -109,18 +109,15 @@ brew update
 info "Installing chezmoi and git..."
 brew install chezmoi git
 
-# Initialize chezmoi with dotfiles
+# Initialize and apply dotfiles with chezmoi
 if [[ -d "$DOTFILES_DIR" ]]; then
     info "Updating dotfiles..."
     chezmoi update
 else
     info "Initializing dotfiles from $DOTFILES_REPO..."
-    chezmoi init "$DOTFILES_REPO"
+    info "You will be prompted for your name, email, and GitHub username."
+    chezmoi init --apply "$DOTFILES_REPO"
 fi
-
-# Apply dotfiles
-info "Applying dotfiles..."
-chezmoi apply
 
 # Run the main setup script
 SETUP_SCRIPT="$DOTFILES_DIR/scripts/02_setup.sh"
