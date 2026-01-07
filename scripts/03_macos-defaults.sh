@@ -107,16 +107,21 @@ defaults write com.apple.dock tilesize -int 48
 info "Setting Dock apps..."
 
 DOCK_PLIST="$HOME/Library/Preferences/com.apple.dock.plist"
+APP_INDEX=0
+FOLDER_INDEX=0
 
 # Helper function to add an app to the Dock
 add_dock_app() {
     local app_path="$1"
     if [[ -d "$app_path" ]]; then
-        /usr/libexec/PlistBuddy -c "Add :persistent-apps: dict" "$DOCK_PLIST" 2>/dev/null
-        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data dict" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data:file-data dict" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data:file-data:_CFURLString string $app_path" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-apps:-1:tile-data:file-data:_CFURLStringType integer 0" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy \
+            -c "Add :persistent-apps:$APP_INDEX dict" \
+            -c "Add :persistent-apps:$APP_INDEX:tile-data dict" \
+            -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data dict" \
+            -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data:_CFURLString string $app_path" \
+            -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data:_CFURLStringType integer 0" \
+            "$DOCK_PLIST"
+        ((APP_INDEX++))
     fi
 }
 
@@ -127,15 +132,18 @@ add_dock_folder() {
     local displayas="${3:-0}"    # 0=stack, 1=folder
     local showas="${4:-2}"       # 0=auto, 1=fan, 2=grid, 3=list
     if [[ -d "$folder_path" ]]; then
-        /usr/libexec/PlistBuddy -c "Add :persistent-others: dict" "$DOCK_PLIST" 2>/dev/null
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data dict" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:arrangement integer $arrangement" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:displayas integer $displayas" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:showas integer $showas" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:file-data dict" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:file-data:_CFURLString string file://$folder_path/" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-data:file-data:_CFURLStringType integer 15" "$DOCK_PLIST"
-        /usr/libexec/PlistBuddy -c "Add :persistent-others:-1:tile-type string directory-tile" "$DOCK_PLIST"
+        /usr/libexec/PlistBuddy \
+            -c "Add :persistent-others:$FOLDER_INDEX dict" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-data dict" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:arrangement integer $arrangement" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:displayas integer $displayas" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:showas integer $showas" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data dict" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data:_CFURLString string file://$folder_path/" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data:_CFURLStringType integer 15" \
+            -c "Add :persistent-others:$FOLDER_INDEX:tile-type string directory-tile" \
+            "$DOCK_PLIST"
+        ((FOLDER_INDEX++))
     fi
 }
 
