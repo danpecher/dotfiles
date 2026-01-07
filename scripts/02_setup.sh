@@ -41,16 +41,7 @@ echo "  Setup - Packages & Configuration"
 echo "=========================================="
 echo ""
 
-# Install packages from Brewfile
-info "Installing packages from Brewfile..."
-if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
-    brew bundle --file="$DOTFILES_DIR/Brewfile"
-    success "Brewfile packages installed"
-else
-    warn "Brewfile not found at $DOTFILES_DIR/Brewfile"
-fi
-
-# Setup SSH key
+# Setup SSH key (needed before brew bundle for taps that use git@github.com)
 setup_ssh() {
     if [[ ! -f ~/.ssh/id_ed25519 ]]; then
         info "Generating SSH key..."
@@ -65,18 +56,49 @@ setup_ssh() {
         ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 
         success "SSH key generated"
-
-        # Add to GitHub if gh is available
-        if command -v gh &>/dev/null; then
-            info "Adding SSH key to GitHub..."
-            if ! gh auth status &>/dev/null; then
-                gh auth login -p ssh -w
-            fi
-            gh ssh-key add ~/.ssh/id_ed25519.pub -t "$(hostname)-$(date +%Y%m%d)" 2>/dev/null || true
-            success "SSH key added to GitHub"
-        fi
     else
         success "SSH key already exists"
+    fi
+}
+
+# Add SSH key to GitHub (requires gh CLI from Brewfile)
+setup_github_ssh() {
+    if [[ ! -f ~/.ssh/id_ed25519.pub ]]; then
+        warn "No SSH key found, skipping GitHub setup"
+        return
+    fi
+
+    if ! command -v gh &>/dev/null; then
+        warn "gh CLI not found, skipping GitHub SSH setup"
+        return
+    fi
+
+    # Check if already authenticated
+    if ! gh auth status &>/dev/null; then
+        info "Authenticating with GitHub..."
+        gh auth login -p ssh -w
+    fi
+
+    # Check if key already added
+    local key_fingerprint
+    key_fingerprint=$(ssh-keygen -lf ~/.ssh/id_ed25519.pub 2>/dev/null | awk '{print $2}')
+    if [[ -n "$key_fingerprint" ]] && ! gh ssh-key list 2>/dev/null | grep -q "$key_fingerprint"; then
+        info "Adding SSH key to GitHub..."
+        gh ssh-key add ~/.ssh/id_ed25519.pub -t "$(hostname)-$(date +%Y%m%d)" 2>/dev/null || true
+        success "SSH key added to GitHub"
+    else
+        success "SSH key already on GitHub"
+    fi
+}
+
+# Install packages from Brewfile
+install_packages() {
+    info "Installing packages from Brewfile..."
+    if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
+        brew bundle --file="$DOTFILES_DIR/Brewfile"
+        success "Brewfile packages installed"
+    else
+        warn "Brewfile not found at $DOTFILES_DIR/Brewfile"
     fi
 }
 
@@ -152,11 +174,13 @@ setup_xcode() {
 }
 
 # Run setup steps
-setup_ssh
-setup_xcode
-setup_mise
-setup_shell
-setup_fzf
+setup_ssh          # Generate SSH keys first (needed for GitHub taps)
+install_packages   # Install Brewfile packages
+setup_github_ssh   # Add SSH key to GitHub (now that gh is installed)
+setup_xcode        # Install Xcode via xcodes
+setup_mise         # Install dev tools via mise
+setup_shell        # Set zsh as default shell
+setup_fzf          # Configure fzf keybindings
 
 echo ""
 success "Setup complete!"
