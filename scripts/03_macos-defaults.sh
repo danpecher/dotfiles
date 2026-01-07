@@ -227,27 +227,31 @@ defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 success "Privacy configured"
 
 ###############################################################################
-# Safari
+# Safari (may fail on newer macOS due to sandboxing - configure manually)
 ###############################################################################
-info "Configuring Safari..."
+info "Configuring Safari (some settings may require manual configuration)..."
 
-defaults write com.apple.Safari AlwaysRestoreSessionAtLaunch -bool true
-defaults write com.apple.Safari ExcludePrivateWindowWhenRestoringSessionAtLaunch -bool true
-defaults write com.apple.Safari ShowOverlayStatusBar -bool true
-defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
-defaults write com.apple.Safari IncludeDevelopMenu -bool true
-defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
-defaults write com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
-defaults write com.apple.Safari WebContinuousSpellCheckingEnabled -bool true
-defaults write com.apple.Safari AutoFillFromAddressBook -bool false
-defaults write com.apple.Safari AutoFillCreditCardData -bool false
-defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
-defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
-defaults write com.apple.Safari WebKitJavaEnabled -bool false
-defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
-defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
+# These settings may fail due to Safari sandboxing in newer macOS versions
+# If they fail, configure Safari preferences manually in Safari > Settings
+{
+    defaults write com.apple.Safari AlwaysRestoreSessionAtLaunch -bool true
+    defaults write com.apple.Safari ExcludePrivateWindowWhenRestoringSessionAtLaunch -bool true
+    defaults write com.apple.Safari ShowOverlayStatusBar -bool true
+    defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
+    defaults write com.apple.Safari IncludeDevelopMenu -bool true
+    defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
+    defaults write com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
+    defaults write com.apple.Safari WebContinuousSpellCheckingEnabled -bool true
+    defaults write com.apple.Safari AutoFillFromAddressBook -bool false
+    defaults write com.apple.Safari AutoFillCreditCardData -bool false
+    defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
+    defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
+    defaults write com.apple.Safari WebKitJavaEnabled -bool false
+    defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
+    defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
+} 2>/dev/null || true
 
-success "Safari configured"
+success "Safari configured (some settings may need manual setup)"
 
 ###############################################################################
 # Login Window
