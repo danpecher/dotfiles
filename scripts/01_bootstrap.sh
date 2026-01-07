@@ -2,8 +2,8 @@
 #
 # Bootstrap script - Complete macOS setup from scratch
 #
-# Usage:
-#   curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh | bash
+# Usage (run in a new shell to preserve TTY for sudo prompts):
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)"
 #
 # Or clone and run:
 #   git clone https://github.com/danpecher/dotfiles.git
@@ -37,6 +37,11 @@ echo "=========================================="
 echo "  macOS Bootstrap"
 echo "=========================================="
 echo ""
+
+# Check if running non-interactively (piped input)
+if [[ ! -t 0 ]]; then
+    error "This script requires interactive input for sudo prompts.\nPlease run with: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)\""
+fi
 
 # Install Xcode Command Line Tools
 if xcode-select -p &>/dev/null; then
