@@ -157,18 +157,19 @@ setup_xcode() {
         success "Xcode installed"
     fi
 
-    # Set Xcode as active developer directory
+    # Set Xcode as active developer directory (must happen before xcodebuild commands)
     if [[ -d "/Applications/Xcode.app" ]]; then
+        info "Setting Xcode as active developer directory..."
         sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
         success "Xcode set as active developer directory"
-    fi
 
-    # Accept Xcode license
-    if command -v xcodebuild &>/dev/null; then
+        # Accept Xcode license
         if ! sudo xcodebuild -license check &>/dev/null 2>&1; then
             info "Accepting Xcode license..."
             sudo xcodebuild -license accept
             success "Xcode license accepted"
+        else
+            success "Xcode license already accepted"
         fi
     fi
 }
