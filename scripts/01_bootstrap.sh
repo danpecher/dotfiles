@@ -22,11 +22,31 @@ NC='\033[0m'
 DOTFILES_REPO="danpecher/dotfiles"
 DOTFILES_DIR="$HOME/.local/share/chezmoi"
 SETUP_PROFILE="${SETUP_PROFILE:-minimal}"
+DOTFILES_REF="${DOTFILES_REF:-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+
+is_local_checkout() {
+    [[ -d "$REPO_ROOT/.git" ]]
+}
+
+run_chezmoi_init() {
+    if is_local_checkout; then
+        chezmoi init --apply --source="$REPO_ROOT"
+        return
+    fi
+
+    if [[ -n "$DOTFILES_REF" ]]; then
+        chezmoi init --apply --branch="$DOTFILES_REF" "$DOTFILES_REPO"
+    else
+        chezmoi init --apply "$DOTFILES_REPO"
+    fi
+}
 
 # Check macOS
 if [[ "$(uname)" != "Darwin" ]]; then
@@ -133,9 +153,17 @@ if [[ -d "$DOTFILES_DIR" ]]; then
     info "Updating dotfiles..."
     chezmoi update
 else
-    info "Initializing dotfiles from $DOTFILES_REPO..."
+    if is_local_checkout; then
+        info "Initializing dotfiles from local checkout: $REPO_ROOT"
+    elif [[ -n "$DOTFILES_REF" ]]; then
+        info "Initializing dotfiles from $DOTFILES_REPO (branch: $DOTFILES_REF)..."
+    else
+        info "Initializing dotfiles from $DOTFILES_REPO..."
+    fi
     info "You will be prompted for your name, email, and GitHub username."
-    chezmoi init --apply "$DOTFILES_REPO"
+    # Use the current checkout when available so branch-local setup changes are preserved.
+    # Otherwise allow an explicit branch override for remote bootstrap runs.
+    run_chezmoi_init
 fi
 
 # Run the main setup script
@@ -152,7 +180,7 @@ fi
 DEFAULTS_SCRIPT="$DOTFILES_DIR/scripts/03_macos-defaults.sh"
 if [[ -f "$DEFAULTS_SCRIPT" ]]; then
     echo ""
-    read -p "Apply minimal macOS system preferences? [y/N] " apply_defaults
+    read -p "Apply macOS system preferences? [y/N] " apply_defaults
     if [[ "$apply_defaults" =~ ^[Yy]$ ]]; then
         chmod +x "$DEFAULTS_SCRIPT"
         "$DEFAULTS_SCRIPT"

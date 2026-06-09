@@ -25,6 +25,12 @@ For the full workstation setup instead:
 SETUP_PROFILE=full ./scripts/01_bootstrap.sh
 ```
 
+To bootstrap a non-default Git branch from a remote script:
+
+```bash
+DOTFILES_REF=your-branch-name /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)"
+```
+
 ## Manual Installation
 
 ```bash
@@ -32,7 +38,7 @@ SETUP_PROFILE=full ./scripts/01_bootstrap.sh
 git clone https://github.com/danpecher/dotfiles.git
 cd dotfiles
 
-# Run bootstrap
+# Run bootstrap from the current checkout/branch
 ./scripts/01_bootstrap.sh
 ```
 

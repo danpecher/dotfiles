@@ -57,13 +57,27 @@ brewfile_for_profile() {
 install_packages() {
     local brewfile
     brewfile="$(brewfile_for_profile)"
+    local bundle_args=("--file=$brewfile")
+    local temp_brewfile=""
 
     if [[ ! -f "$brewfile" ]]; then
         error "Brewfile not found: $brewfile"
     fi
 
+    if grep -Eq '^mas ' "$brewfile" && ! mas account &>/dev/null; then
+        temp_brewfile="$(mktemp "${TMPDIR:-/tmp}/Brewfile.XXXXXX")"
+        grep -Ev '^mas ' "$brewfile" > "$temp_brewfile"
+        bundle_args=("--file=$temp_brewfile")
+        warn "Not signed into the App Store; skipping mas dependencies for this run"
+    fi
+
     info "Installing packages from $(basename "$brewfile")..."
-    brew bundle --file="$brewfile"
+    brew bundle "${bundle_args[@]}"
+
+    if [[ -n "$temp_brewfile" && -f "$temp_brewfile" ]]; then
+        rm -f "$temp_brewfile"
+    fi
+
     success "Packages installed"
 }
 
@@ -105,6 +119,7 @@ print_manual_steps() {
     info "Manual follow-up:"
     echo "  - Open a new shell so Homebrew, zsh plugins, and prompt changes load."
     echo "  - If GitHub auth needs to be refreshed later, run: gh auth login"
+    echo "  - If App Store apps were skipped, sign into the App Store and rerun the setup profile later."
 
     if [[ "$SETUP_PROFILE" == "full" ]]; then
         echo "  - Full profile keeps the larger workstation package set and mise toolchain install."
