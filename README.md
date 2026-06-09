@@ -10,15 +10,20 @@ Run this on a fresh macOS installation:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)"
 ```
 
-This will:
+This defaults to the `minimal` profile for a work VM. It will:
 1. Install Xcode Command Line Tools
 2. Install Homebrew
-3. Install chezmoi and apply dotfiles
-4. Install all packages from Brewfile
-5. Setup SSH keys and GitHub authentication
-6. Install Xcode via xcodes
-7. Install development tools via mise
-8. Optionally apply macOS system preferences
+3. Setup SSH keys and GitHub authentication
+4. Install chezmoi and apply dotfiles
+5. Install a minimal package set for daily development
+6. Install development tools via mise
+7. Optionally apply the standard macOS system preferences from this repo
+
+For the full workstation setup instead:
+
+```bash
+SETUP_PROFILE=full ./scripts/01_bootstrap.sh
+```
 
 ## Manual Installation
 
@@ -44,22 +49,17 @@ cd dotfiles
 - **starship** - Cross-shell prompt
 - **mise** - Development tool version manager
 
-### Packages (Brewfile)
+### Packages
 
-**CLI Tools:**
-- Modern replacements: `ripgrep`, `fd`, `bat`, `eza`, `zoxide`, `dust`, `duf`
-- Utilities: `fzf`, `jq`, `yq`, `htop`, `trash`, `lazygit`, `git-delta`
-- Shell: `starship`, `zsh-autosuggestions`, `zsh-syntax-highlighting`
+**Minimal profile (`Brewfile.minimal`):**
+- Dev essentials: `git`, `gh`, `chezmoi`, `mise`, `neovim`
+- Shell comfort: `ripgrep`, `fd`, `fzf`, `bat`, `eza`, `zoxide`, `starship`
+- Git ergonomics: `git-delta`, `lazygit`, `trash`, `zsh-autosuggestions`, `zsh-syntax-highlighting`
+- GUI basics: `ghostty`, `visual-studio-code`, `raycast`
+- Main terminal fonts: JetBrains Mono Nerd Font, Fira Code Nerd Font, Iosevka Nerd Font, Symbols Only Nerd Font
 
-**Applications:**
-- Development: `visual-studio-code`, `ghostty`, `orbstack`
-- Productivity: `raycast`, `notion`, `aerospace`
-- Utilities: `monitorcontrol`
-
-**Fonts:**
-- JetBrains Mono Nerd Font
-- Fira Code Nerd Font
-- Iosevka Nerd Font
+**Full profile (`Brewfile`):**
+- Everything above, plus the larger workstation package set and GUI apps
 
 ### Development Tools (mise)
 
@@ -71,21 +71,19 @@ cd dotfiles
 
 | Script | Purpose |
 |--------|---------|
-| `01_bootstrap.sh` | Full setup from scratch (can be piped from curl) |
-| `02_setup.sh` | Install packages and configure tools |
-| `03_macos-defaults.sh` | Apply macOS system preferences |
+| `01_bootstrap.sh` | Bootstrap macOS and run the selected setup profile |
+| `02_setup.sh` | Install packages and configure the shell for `minimal` or `full` |
+| `03_macos-defaults.sh` | Apply the standard macOS preferences used by this repo |
 
 ## macOS Preferences
 
 The `03_macos-defaults.sh` script configures:
 
-- Dark mode, fast key repeat, disabled auto-correct
-- Dock: auto-hide, no recents, fast animations
-- Finder: show hidden files, path bar, column view
-- Trackpad: tap to click, three-finger drag
-- Safari: developer tools, session restore
-- Spotlight disabled (using Raycast)
-- Login items: Raycast, AeroSpace, MonitorControl
+- General UI, keyboard, and text input preferences
+- Dock behavior and Dock contents
+- Finder, trackpad, spaces, and window manager preferences
+- Safari, Control Center, Activity Monitor, TextEdit, and Time Machine tweaks
+- Login items, screenshots, software update, and related system defaults
 
 ## Updating
 

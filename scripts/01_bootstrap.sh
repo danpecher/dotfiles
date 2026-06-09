@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Bootstrap script - Complete macOS setup from scratch
+# Bootstrap script - macOS setup from scratch
 #
 # Usage (run in a new shell to preserve TTY for sudo prompts):
 #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)"
@@ -21,6 +21,7 @@ NC='\033[0m'
 
 DOTFILES_REPO="danpecher/dotfiles"
 DOTFILES_DIR="$HOME/.local/share/chezmoi"
+SETUP_PROFILE="${SETUP_PROFILE:-minimal}"
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
@@ -43,43 +44,38 @@ if [[ ! -t 0 ]]; then
     error "This script requires interactive input for sudo prompts.\nPlease run with: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)\""
 fi
 
-# Generate SSH key early (needed because git config rewrites HTTPS to SSH)
+# Generate SSH key early because the git config rewrites GitHub HTTPS URLs to SSH.
 generate_ssh_key() {
     if [[ ! -f ~/.ssh/id_ed25519 ]]; then
-        info "Generating SSH key (needed for GitHub access)..."
+        info "Generating SSH key for GitHub access..."
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
 
         read -p "Enter your email for SSH key: " ssh_email
         ssh-keygen -t ed25519 -C "$ssh_email" -f ~/.ssh/id_ed25519
 
-        # Add to keychain
-        eval "$(ssh-agent -s)"
+        eval "$(ssh-agent -s)" &>/dev/null
         ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 
         success "SSH key generated"
     else
         success "SSH key already exists"
-        # Ensure key is in agent
         eval "$(ssh-agent -s)" &>/dev/null
         ssh-add --apple-use-keychain ~/.ssh/id_ed25519 &>/dev/null || true
     fi
 }
 
-# Add SSH key to GitHub using gh CLI
 setup_github_ssh() {
     if [[ ! -f ~/.ssh/id_ed25519.pub ]]; then
-        warn "No SSH key found"
+        warn "No SSH public key found"
         return
     fi
 
-    # Authenticate with GitHub if needed
     if ! gh auth status &>/dev/null; then
         info "Authenticating with GitHub..."
         gh auth login -p ssh -w
     fi
 
-    # Add SSH key if not already on GitHub
     local key_fingerprint
     key_fingerprint=$(ssh-keygen -lf ~/.ssh/id_ed25519.pub 2>/dev/null | awk '{print $2}')
     if [[ -n "$key_fingerprint" ]] && ! gh ssh-key list 2>/dev/null | grep -q "$key_fingerprint"; then
@@ -126,11 +122,10 @@ fi
 info "Updating Homebrew..."
 brew update
 
-# Install essential tools (gh needed to add SSH key to GitHub before chezmoi applies git config)
+# Install essential tools required before chezmoi applies git config.
 info "Installing chezmoi, git, and gh..."
 brew install chezmoi git gh
 
-# Add SSH key to GitHub (before chezmoi applies git config with SSH URL rewriting)
 setup_github_ssh
 
 # Initialize and apply dotfiles with chezmoi
@@ -146,9 +141,9 @@ fi
 # Run the main setup script
 SETUP_SCRIPT="$DOTFILES_DIR/scripts/02_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
-    info "Running setup script..."
+    info "Running setup script with profile: $SETUP_PROFILE"
     chmod +x "$SETUP_SCRIPT"
-    "$SETUP_SCRIPT"
+    SETUP_PROFILE="$SETUP_PROFILE" "$SETUP_SCRIPT"
 else
     warn "Setup script not found at $SETUP_SCRIPT"
 fi
@@ -157,7 +152,7 @@ fi
 DEFAULTS_SCRIPT="$DOTFILES_DIR/scripts/03_macos-defaults.sh"
 if [[ -f "$DEFAULTS_SCRIPT" ]]; then
     echo ""
-    read -p "Apply macOS system preferences? [y/N] " apply_defaults
+    read -p "Apply minimal macOS system preferences? [y/N] " apply_defaults
     if [[ "$apply_defaults" =~ ^[Yy]$ ]]; then
         chmod +x "$DEFAULTS_SCRIPT"
         "$DEFAULTS_SCRIPT"
@@ -172,5 +167,7 @@ success "Setup complete!"
 echo "=========================================="
 echo ""
 info "Restart your terminal or run: source ~/.zshrc"
-info "Some macOS preferences may require a logout/restart."
+if [[ "$SETUP_PROFILE" == "full" ]]; then
+    info "Some macOS preferences may require a logout/restart."
+fi
 echo ""

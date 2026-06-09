@@ -6,7 +6,6 @@
 
 set -e
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -17,14 +16,11 @@ info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 
-# Close System Settings to prevent it from overriding our settings
 osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
 osascript -e 'tell application "System Settings" to quit' 2>/dev/null || true
 
-# Ask for admin password upfront
 sudo -v
 
-# Keep-alive: update sudo timestamp
 while true; do
   sudo -n true
   sleep 60
@@ -38,43 +34,26 @@ echo "=========================================="
 echo ""
 
 ###############################################################################
-# General UI/UX (from NSGlobalDomain)
+# General UI/UX
 ###############################################################################
 info "Configuring General UI/UX..."
 
-# Dark mode
 defaults write NSGlobalDomain AppleInterfaceStyle -string "Dark"
-
-# Natural scrolling
 defaults write NSGlobalDomain "com.apple.swipescrolldirection" -bool true
-
-# Disable beep sound on volume change
 defaults write NSGlobalDomain "com.apple.sound.beep.feedback" -int 0
-
-# Full keyboard access for all controls
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
-
-# Enable press and hold
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-
-# Fast keyboard repeat (for vim users)
 defaults write NSGlobalDomain InitialKeyRepeat -int 15
 defaults write NSGlobalDomain KeyRepeat -int 3
-
-# Disable auto-correct features
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
 defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
 defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
 defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
-
-# Expand save/print panels by default
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
 defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
-
-# Add web inspector context menu
 defaults write NSGlobalDomain WebKitDeveloperExtras -bool true
 
 success "General UI/UX configured"
@@ -107,14 +86,12 @@ defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 defaults write com.apple.dock tilesize -int 48
 
-# Set Dock apps (persistent-apps)
 info "Setting Dock apps..."
 
 DOCK_PLIST="$HOME/Library/Preferences/com.apple.dock.plist"
 APP_INDEX=0
 FOLDER_INDEX=0
 
-# Helper function to add an app to the Dock
 add_dock_app() {
   local app_path="$1"
   if [[ -d "$app_path" ]]; then
@@ -129,12 +106,11 @@ add_dock_app() {
   fi
 }
 
-# Helper function to add a folder to the Dock
 add_dock_folder() {
   local folder_path="$1"
-  local arrangement="${2:-1}" # 1=name, 2=date added, 3=date modified, 4=date created, 5=kind
-  local displayas="${3:-0}"   # 0=stack, 1=folder
-  local showas="${4:-2}"      # 0=auto, 1=fan, 2=grid, 3=list
+  local arrangement="${2:-1}"
+  local displayas="${3:-0}"
+  local showas="${4:-2}"
   if [[ -d "$folder_path" ]]; then
     /usr/libexec/PlistBuddy \
       -c "Add :persistent-others:$FOLDER_INDEX dict" \
@@ -151,21 +127,18 @@ add_dock_folder() {
   fi
 }
 
-# Clear existing persistent-apps and persistent-others
 /usr/libexec/PlistBuddy -c "Delete :persistent-apps" "$DOCK_PLIST"
 /usr/libexec/PlistBuddy -c "Delete :persistent-others" "$DOCK_PLIST"
 /usr/libexec/PlistBuddy -c "Add :persistent-apps array" "$DOCK_PLIST"
 /usr/libexec/PlistBuddy -c "Add :persistent-others array" "$DOCK_PLIST"
 
-# Add apps to Dock
 add_dock_app "/Applications/Ghostty.app"
 add_dock_app "/Applications/Notion.app"
 add_dock_app "/System/Cryptexes/App/System/Applications/Safari.app"
 add_dock_app "/Applications/Visual Studio Code.app"
 
-# Add folders to Dock (right side)
-add_dock_folder "$HOME/Downloads" 2 0 2 # Sort by date added, stack, grid
-add_dock_folder "$HOME/Desktop" 1 0 2   # Sort by name, stack, grid
+add_dock_folder "$HOME/Downloads" 2 0 2
+add_dock_folder "$HOME/Desktop" 1 0 2
 
 success "Dock configured"
 
@@ -184,17 +157,12 @@ defaults write com.apple.finder ShowStatusBar -bool true
 defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
 defaults write com.apple.finder _FXSortFoldersFirst -bool true
 defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
-
-# Show drives on desktop
 defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool true
 defaults write com.apple.finder ShowHardDrivesOnDesktop -bool true
 defaults write com.apple.finder ShowMountedServersOnDesktop -bool true
 defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool true
 
-# Show ~/Library folder
 chflags nohidden ~/Library 2>/dev/null || true
-
-# Show /Volumes folder
 sudo chflags nohidden /Volumes 2>/dev/null || true
 
 success "Finder configured"
@@ -207,8 +175,6 @@ info "Configuring Trackpad..."
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true
 defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
-
-# Light haptic feedback
 defaults write com.apple.AppleMultitouchTrackpad ActuationStrength -int 0
 defaults write com.apple.AppleMultitouchTrackpad FirstClickThreshold -int 0
 
@@ -219,7 +185,6 @@ success "Trackpad configured"
 ###############################################################################
 info "Configuring Desktop Services..."
 
-# Avoid creating .DS_Store files on network or USB volumes
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 
@@ -230,10 +195,7 @@ success "Desktop Services configured"
 ###############################################################################
 info "Configuring Spaces..."
 
-# Displays have separate spaces
 defaults write com.apple.spaces "spans-displays" -int 0
-
-# Auto-switch to space when switching to app
 defaults write .GlobalPreferences AppleSpacesSwitchOnActivate -bool true
 
 success "Spaces configured"
@@ -256,7 +218,6 @@ success "Window Manager configured"
 ###############################################################################
 info "Configuring Screen Saver & Security..."
 
-# Require password immediately after sleep
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
@@ -277,24 +238,17 @@ success "Screen Capture configured"
 ###############################################################################
 info "Configuring Privacy..."
 
-# Disable personalized ads
 defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
-
-# Disable app quarantine dialog
 defaults write com.apple.LaunchServices LSQuarantine -bool false
-
-# Prevent Photos from opening when devices are plugged in
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
 
 success "Privacy configured"
 
 ###############################################################################
-# Safari (may fail on newer macOS due to sandboxing - configure manually)
+# Safari
 ###############################################################################
 info "Configuring Safari (some settings may require manual configuration)..."
 
-# These settings may fail due to Safari sandboxing in newer macOS versions
-# If they fail, configure Safari preferences manually in Safari > Settings
 {
   defaults write com.apple.Safari AlwaysRestoreSessionAtLaunch -bool true
   defaults write com.apple.Safari ExcludePrivateWindowWhenRestoringSessionAtLaunch -bool true
@@ -320,7 +274,6 @@ success "Safari configured (some settings may need manual setup)"
 ###############################################################################
 info "Configuring Login Window..."
 
-# Disable guest user
 sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool false
 
 success "Login Window configured"
@@ -331,15 +284,12 @@ success "Login Window configured"
 info "Configuring Control Center..."
 
 defaults write com.apple.controlcenter "NSStatusItem Visible Battery" -bool true
-# Note: Bluetooth visibility is not scriptable in macOS 15+ (set manually in System Settings → Control Center)
 defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
 defaults write com.apple.controlcenter "NSStatusItem Visible WiFi" -bool true
 defaults write com.apple.controlcenter "NSStatusItem Visible AirDrop" -bool false
 defaults write com.apple.controlcenter "NSStatusItem Visible Display" -bool false
 defaults write com.apple.controlcenter "NSStatusItem Visible FocusModes" -bool false
 defaults write com.apple.controlcenter "NSStatusItem Visible NowPlaying" -bool false
-
-# Show battery percentage
 defaults write com.apple.menuextra.battery ShowPercent -string "YES"
 
 success "Control Center configured"
@@ -358,14 +308,11 @@ defaults write com.apple.commerce AutoUpdate -bool true
 success "Software Update configured"
 
 ###############################################################################
-# Spotlight (disable for Raycast)
+# Spotlight
 ###############################################################################
 info "Configuring Spotlight..."
 
-# Disable Spotlight keyboard shortcut (Cmd+Space) - will use Raycast
-# NOTE: This doesn't work reliably in macOS 15+. Must disable manually:
-#   System Settings → Keyboard → Keyboard Shortcuts → Spotlight → uncheck "Show Spotlight search"
-warn "Spotlight shortcut must be disabled manually: System Settings → Keyboard → Keyboard Shortcuts → Spotlight"
+warn "Spotlight shortcut must be disabled manually: System Settings -> Keyboard -> Keyboard Shortcuts -> Spotlight"
 
 ###############################################################################
 # Activity Monitor
