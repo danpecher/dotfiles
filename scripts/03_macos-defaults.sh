@@ -25,7 +25,11 @@ osascript -e 'tell application "System Settings" to quit' 2>/dev/null || true
 sudo -v
 
 # Keep-alive: update sudo timestamp
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+while true; do
+  sudo -n true
+  sleep 60
+  kill -0 "$$" || exit
+done 2>/dev/null &
 
 echo ""
 echo "=========================================="
@@ -51,7 +55,7 @@ defaults write NSGlobalDomain "com.apple.sound.beep.feedback" -int 0
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
 # Enable press and hold
-defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool true
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
 
 # Fast keyboard repeat (for vim users)
 defaults write NSGlobalDomain InitialKeyRepeat -int 15
@@ -112,44 +116,44 @@ FOLDER_INDEX=0
 
 # Helper function to add an app to the Dock
 add_dock_app() {
-    local app_path="$1"
-    if [[ -d "$app_path" ]]; then
-        /usr/libexec/PlistBuddy \
-            -c "Add :persistent-apps:$APP_INDEX dict" \
-            -c "Add :persistent-apps:$APP_INDEX:tile-data dict" \
-            -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data dict" \
-            -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data:_CFURLString string $app_path" \
-            -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data:_CFURLStringType integer 0" \
-            "$DOCK_PLIST"
-        ((APP_INDEX++))
-    fi
+  local app_path="$1"
+  if [[ -d "$app_path" ]]; then
+    /usr/libexec/PlistBuddy \
+      -c "Add :persistent-apps:$APP_INDEX dict" \
+      -c "Add :persistent-apps:$APP_INDEX:tile-data dict" \
+      -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data dict" \
+      -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data:_CFURLString string $app_path" \
+      -c "Add :persistent-apps:$APP_INDEX:tile-data:file-data:_CFURLStringType integer 0" \
+      "$DOCK_PLIST"
+    APP_INDEX=$((APP_INDEX + 1))
+  fi
 }
 
 # Helper function to add a folder to the Dock
 add_dock_folder() {
-    local folder_path="$1"
-    local arrangement="${2:-1}"  # 1=name, 2=date added, 3=date modified, 4=date created, 5=kind
-    local displayas="${3:-0}"    # 0=stack, 1=folder
-    local showas="${4:-2}"       # 0=auto, 1=fan, 2=grid, 3=list
-    if [[ -d "$folder_path" ]]; then
-        /usr/libexec/PlistBuddy \
-            -c "Add :persistent-others:$FOLDER_INDEX dict" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-data dict" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:arrangement integer $arrangement" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:displayas integer $displayas" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:showas integer $showas" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data dict" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data:_CFURLString string file://$folder_path/" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data:_CFURLStringType integer 15" \
-            -c "Add :persistent-others:$FOLDER_INDEX:tile-type string directory-tile" \
-            "$DOCK_PLIST"
-        ((FOLDER_INDEX++))
-    fi
+  local folder_path="$1"
+  local arrangement="${2:-1}" # 1=name, 2=date added, 3=date modified, 4=date created, 5=kind
+  local displayas="${3:-0}"   # 0=stack, 1=folder
+  local showas="${4:-2}"      # 0=auto, 1=fan, 2=grid, 3=list
+  if [[ -d "$folder_path" ]]; then
+    /usr/libexec/PlistBuddy \
+      -c "Add :persistent-others:$FOLDER_INDEX dict" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-data dict" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-data:arrangement integer $arrangement" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-data:displayas integer $displayas" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-data:showas integer $showas" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data dict" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data:_CFURLString string file://$folder_path/" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-data:file-data:_CFURLStringType integer 15" \
+      -c "Add :persistent-others:$FOLDER_INDEX:tile-type string directory-tile" \
+      "$DOCK_PLIST"
+    FOLDER_INDEX=$((FOLDER_INDEX + 1))
+  fi
 }
 
 # Clear existing persistent-apps and persistent-others
-/usr/libexec/PlistBuddy -c "Delete :persistent-apps" "$DOCK_PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Delete :persistent-others" "$DOCK_PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Delete :persistent-apps" "$DOCK_PLIST"
+/usr/libexec/PlistBuddy -c "Delete :persistent-others" "$DOCK_PLIST"
 /usr/libexec/PlistBuddy -c "Add :persistent-apps array" "$DOCK_PLIST"
 /usr/libexec/PlistBuddy -c "Add :persistent-others array" "$DOCK_PLIST"
 
@@ -160,8 +164,8 @@ add_dock_app "/System/Cryptexes/App/System/Applications/Safari.app"
 add_dock_app "/Applications/Visual Studio Code.app"
 
 # Add folders to Dock (right side)
-add_dock_folder "$HOME/Downloads" 2 0 2  # Sort by date added, stack, grid
-add_dock_folder "$HOME/Desktop" 1 0 2    # Sort by name, stack, grid
+add_dock_folder "$HOME/Downloads" 2 0 2 # Sort by date added, stack, grid
+add_dock_folder "$HOME/Desktop" 1 0 2   # Sort by name, stack, grid
 
 success "Dock configured"
 
@@ -202,8 +206,6 @@ info "Configuring Trackpad..."
 
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true
-defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
 defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
 # Light haptic feedback
@@ -294,21 +296,21 @@ info "Configuring Safari (some settings may require manual configuration)..."
 # These settings may fail due to Safari sandboxing in newer macOS versions
 # If they fail, configure Safari preferences manually in Safari > Settings
 {
-    defaults write com.apple.Safari AlwaysRestoreSessionAtLaunch -bool true
-    defaults write com.apple.Safari ExcludePrivateWindowWhenRestoringSessionAtLaunch -bool true
-    defaults write com.apple.Safari ShowOverlayStatusBar -bool true
-    defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
-    defaults write com.apple.Safari IncludeDevelopMenu -bool true
-    defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
-    defaults write com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
-    defaults write com.apple.Safari WebContinuousSpellCheckingEnabled -bool true
-    defaults write com.apple.Safari AutoFillFromAddressBook -bool false
-    defaults write com.apple.Safari AutoFillCreditCardData -bool false
-    defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
-    defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
-    defaults write com.apple.Safari WebKitJavaEnabled -bool false
-    defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
-    defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
+  defaults write com.apple.Safari AlwaysRestoreSessionAtLaunch -bool true
+  defaults write com.apple.Safari ExcludePrivateWindowWhenRestoringSessionAtLaunch -bool true
+  defaults write com.apple.Safari ShowOverlayStatusBar -bool true
+  defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
+  defaults write com.apple.Safari IncludeDevelopMenu -bool true
+  defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
+  defaults write com.apple.Safari WebAutomaticSpellingCorrectionEnabled -bool false
+  defaults write com.apple.Safari WebContinuousSpellCheckingEnabled -bool true
+  defaults write com.apple.Safari AutoFillFromAddressBook -bool false
+  defaults write com.apple.Safari AutoFillCreditCardData -bool false
+  defaults write com.apple.Safari AutoFillMiscellaneousForms -bool false
+  defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
+  defaults write com.apple.Safari WebKitJavaEnabled -bool false
+  defaults write com.apple.Safari WebKitJavaScriptCanOpenWindowsAutomatically -bool false
+  defaults write com.apple.Safari "com.apple.Safari.ContentPageGroupIdentifier.WebKit2DeveloperExtrasEnabled" -bool true
 } 2>/dev/null || true
 
 success "Safari configured (some settings may need manual setup)"
@@ -329,7 +331,7 @@ success "Login Window configured"
 info "Configuring Control Center..."
 
 defaults write com.apple.controlcenter "NSStatusItem Visible Battery" -bool true
-defaults write com.apple.controlcenter "NSStatusItem Visible Bluetooth" -bool true
+# Note: Bluetooth visibility is not scriptable in macOS 15+ (set manually in System Settings → Control Center)
 defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
 defaults write com.apple.controlcenter "NSStatusItem Visible WiFi" -bool true
 defaults write com.apple.controlcenter "NSStatusItem Visible AirDrop" -bool false
@@ -361,10 +363,9 @@ success "Software Update configured"
 info "Configuring Spotlight..."
 
 # Disable Spotlight keyboard shortcut (Cmd+Space) - will use Raycast
-/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:64:enabled false" ~/Library/Preferences/com.apple.symbolichotkeys.plist 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:65:enabled false" ~/Library/Preferences/com.apple.symbolichotkeys.plist 2>/dev/null || true
-
-success "Spotlight configured"
+# NOTE: This doesn't work reliably in macOS 15+. Must disable manually:
+#   System Settings → Keyboard → Keyboard Shortcuts → Spotlight → uncheck "Show Spotlight search"
+warn "Spotlight shortcut must be disabled manually: System Settings → Keyboard → Keyboard Shortcuts → Spotlight"
 
 ###############################################################################
 # Activity Monitor
@@ -405,10 +406,10 @@ success "Time Machine configured"
 info "Configuring Login Items..."
 
 add_login_item() {
-    local app_path="$1"
-    if [[ -d "$app_path" ]]; then
-        osascript -e "tell application \"System Events\" to make login item at end with properties {path:\"$app_path\", hidden:false}" 2>/dev/null || true
-    fi
+  local app_path="$1"
+  if [[ -d "$app_path" ]]; then
+    osascript -e "tell application \"System Events\" to make login item at end with properties {path:\"$app_path\", hidden:false}" 2>/dev/null || true
+  fi
 }
 
 add_login_item "/Applications/Raycast.app"
@@ -423,11 +424,11 @@ success "Login Items configured"
 info "Restarting affected applications..."
 
 for app in "Activity Monitor" \
-    "Dock" \
-    "Finder" \
-    "Safari" \
-    "SystemUIServer"; do
-    killall "${app}" &>/dev/null || true
+  "Dock" \
+  "Finder" \
+  "Safari" \
+  "SystemUIServer"; do
+  killall "${app}" &>/dev/null || true
 done
 
 echo ""

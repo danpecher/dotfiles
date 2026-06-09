@@ -45,6 +45,7 @@ brew "mcfly"             # Better shell history
 brew "navi"              # Interactive cheatsheet
 brew "glow"              # Markdown viewer
 brew "yazi"              # Terminal file manager
+brew "kanata"
 
 # =============================================================================
 # Shell & Terminal
@@ -85,7 +86,7 @@ cask "nikitabobko/tap/aerospace"  # Tiling window manager
 cask "monitorcontrol"    # External monitor brightness
 
 # AI
-cask "claude"
+cask "claude-code"
 
 # =============================================================================
 # Fonts
