@@ -12,6 +12,10 @@ fi
 # Personal scripts. zsh keeps this array unique, avoiding PATH growth on reload.
 typeset -U path PATH
 path=("$HOME/bin" "$HOME/.local/bin" $path)
+for postgres_bin in /opt/homebrew/opt/libpq/bin /usr/local/opt/libpq/bin; do
+  [[ -d "$postgres_bin" ]] && path=("$postgres_bin" $path)
+done
+unset postgres_bin
 
 # =============================================================================
 # mise - Development tool version manager
@@ -34,16 +38,15 @@ fi
 # =============================================================================
 # zoxide - smarter cd
 if command -v zoxide &>/dev/null; then
-    eval "$(zoxide init zsh --cmd cd)"
+  eval "$(zoxide init zsh --cmd cd)"
 fi
 
-# Open yazi and leave the shell in its final directory.
 function y() {
-    local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd
-    command yazi "$@" --cwd-file="$tmp"
-    IFS= read -r -d '' cwd < "$tmp"
-    [[ -n "$cwd" && "$cwd" != "$PWD" ]] && builtin cd -- "$cwd"
-    command rm -f -- "$tmp"
+  local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd
+  command yazi "$@" --cwd-file="$tmp"
+  IFS= read -r -d '' cwd < "$tmp"
+  [[ -n "$cwd" && "$cwd" != "$PWD" ]] && builtin cd -- "$cwd"
+  command rm -f -- "$tmp"
 }
 
 # fzf - fuzzy finder
@@ -130,7 +133,8 @@ alias mv='mv -i'
 # Quick edit
 alias zshrc='${EDITOR:-code} ~/.zshrc'
 alias reload='source ~/.zshrc'
-alias tm='tmuxinator'
+
+alias tm=tmuxinator
 alias nrd='npm run dev'
 alias ni='npm install'
 
@@ -166,3 +170,15 @@ fi
 if [[ -f "$HOME/.local/bin/env" ]]; then
     source "$HOME/.local/bin/env"
 fi
+
+############################
+y # <------- will open yazi on start
+############################
+
+# pnpm
+export PNPM_HOME="$HOME/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end

@@ -1,0 +1,22 @@
+{
+  "title": "Tools",
+  "fromCategory": "Tools",
+  "items": [
+    {
+      "title": "lazygit",
+      "action": { "popup": "lazygit" }
+    },
+    {
+      "title": "btop",
+      "action": { "popup": "btop" }
+    },
+    {
+      "title": "git status",
+      "action": { "popup": "git -c color.ui=always status" }
+    },
+    {
+      "title": "shell here",
+      "action": { "popup": "$SHELL" }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+gui:
+  sidePanels:
+    - [files]
+    - [branches, remotes, tags]
+    - [commits, reflog]
+    - [worktrees, stash]

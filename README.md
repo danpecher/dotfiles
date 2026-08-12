@@ -43,8 +43,9 @@ runs `brew bundle cleanup --force`.
 
 Desired state is maintained intentionally:
 
-- Chezmoi source files: shell, git, SSH, AeroSpace, Ghostty, Kanata, Neovim,
-  mise, VS Code settings, and global gitignore
+- Chezmoi source files: shell, Git, SSH, AeroSpace, Ghostty, Kanata, Neovim,
+  mise, VS Code, Claude Code, Hammerspoon, tmux, btop, LazyGit, Mole,
+  GH CLI, Testcontainers, personal scripts, and global gitignore
 - `Brewfile`: personal machine-wide formulae, applications, fonts, Mac App
   Store entries, and VS Code extensions
 - `Brewfile.minimal`: optional lightweight machine/VM package set

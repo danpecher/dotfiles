@@ -13,6 +13,11 @@ separate secret/data backup:
 - application databases, documents, and browser profiles
 - Übersicht simple-bar preferences (stored in WebKit local storage; the widget
   source itself is pinned and installed automatically)
+- Karabiner VirtualHID approval and Kanata Input Monitoring/Accessibility
+  permissions. Karabiner supplies the driver; avoid enabling Karabiner mappings
+  at the same time as Kanata because both can compete for keyboard input.
+- npm authentication. Keep tokens out of `.zshenv`, `.npmrc`, and this repository;
+  inject `NPM_TOKEN` from a password manager or the macOS Keychain instead.
 
 Run `make snapshot` after completing these steps so their installed applications
 and system extensions remain visible in the machine inventory.

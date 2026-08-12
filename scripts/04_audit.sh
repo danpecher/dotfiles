@@ -71,12 +71,24 @@ if command -v jq >/dev/null 2>&1 && command -v brew >/dev/null 2>&1; then
 fi
 
 if command -v mise >/dev/null 2>&1; then
-    mise ls --missing 2>/dev/null > "$TMP_DIR/missing-mise" || true
+    # Ignore project/parent mise.toml files; this audit owns only the global
+    # configuration applied from dot_config/mise/config.toml.
+    mise ls --global --missing 2>/dev/null > "$TMP_DIR/missing-mise" || true
     report_file "Missing mise tools" "$TMP_DIR/missing-mise"
 else
     section "mise"
     fail "mise is not installed"
     drift=1
+fi
+
+if [[ "$PROFILE" == personal || "$PROFILE" == full ]] && command -v kanata >/dev/null 2>&1; then
+    section "Kanata service"
+    if launchctl print system/homebrew.mxcl.kanata >/dev/null 2>&1; then
+        printf 'running\n'
+    else
+        fail "not running (run: sudo brew services start kanata)"
+        drift=1
+    fi
 fi
 
 section "Result"

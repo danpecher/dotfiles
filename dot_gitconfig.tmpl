@@ -1,5 +1,4 @@
 # Git configuration managed by chezmoi
-# This is a template that uses chezmoi variables
 
 [user]
     name = {{ .name | quote }}
@@ -20,11 +19,16 @@
     excludesfile = ~/.gitignore_global
 
 [interactive]
-    diffFilter = delta --color-only
+    diffFilter = delta --color-only --features=interactive
 
 [delta]
     navigate = true
+    side-by-side = false
     line-numbers = true
+    features = decorations
+
+[delta "interactive"]
+    keep-plus-minus-markers = true
 
 [pull]
     rebase = true
@@ -45,44 +49,31 @@
 [diff]
     colorMoved = default
 
-[alias]
-    # Status
-    st = status -sb
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
 
-    # Commit
+[alias]
+    st = status -sb
     ci = commit
     cm = commit -m
     ca = commit --amend
-
-    # Branch
     br = branch
     co = checkout
     sw = switch
-
-    # Log
     lg = log --oneline --graph --decorate
     ll = log --pretty=format:'%C(yellow)%h%Creset %s %C(cyan)<%an>%Creset %C(green)(%cr)%Creset' --abbrev-commit
-
-    # Diff
     df = diff
     dc = diff --cached
-
-    # Reset
     undo = reset HEAD~1 --mixed
-
-    # Stash
     sl = stash list
     sp = stash pop
     ss = stash save
-
-    # Clean up
     cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master' | xargs -n 1 git branch -d"
-
-    # Submodules
     update = submodule update --init --recursive
     foreach = submodule foreach
-
-    # Amend
     amend = commit --amend -m
 
 [credential]

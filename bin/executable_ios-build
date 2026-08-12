@@ -1,0 +1,290 @@
+#!/bin/bash
+set -euo pipefail
+
+CONFIG_DIR="$HOME/.config/ios-build"
+LAST_DEVICE_FILE="$CONFIG_DIR/last-device"
+
+# --- Detect project/workspace ---
+PROJECT=""
+WORKSPACE=""
+SCHEME=""
+XCODE_FLAG=""
+
+USE_LAST=false
+CLEAN=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --last) USE_LAST=true ;;
+    --clean) CLEAN=true ;;
+    --project=*) PROJECT="${arg#--project=}" ;;
+    --workspace=*) WORKSPACE="${arg#--workspace=}" ;;
+    --scheme=*) SCHEME="${arg#--scheme=}" ;;
+  esac
+done
+
+if [ -z "$PROJECT" ] && [ -z "$WORKSPACE" ]; then
+  # Prefer workspace over project (CocoaPods, SPM, etc.)
+  WORKSPACE=$(find . -maxdepth 2 -name "*.xcworkspace" -not -path "*/Pods/*" -not -path "*/.build/*" -print -quit 2>/dev/null || true)
+  if [ -z "$WORKSPACE" ]; then
+    PROJECT=$(find . -maxdepth 2 -name "*.xcodeproj" -not -path "*/Pods/*" -print -quit 2>/dev/null || true)
+  fi
+fi
+
+if [ -n "$WORKSPACE" ]; then
+  XCODE_FLAG="-workspace $WORKSPACE"
+  echo "Workspace: $WORKSPACE"
+elif [ -n "$PROJECT" ]; then
+  XCODE_FLAG="-project $PROJECT"
+  echo "Project: $PROJECT"
+else
+  echo "Error: No .xcworkspace or .xcodeproj found (searched 2 levels deep)"
+  echo "Usage: ios-build [--workspace=path/to/App.xcworkspace] [--project=path/to/App.xcodeproj] [--scheme=SchemeName]"
+  exit 1
+fi
+
+# --- Resolve scheme ---
+LAST_SCHEME_FILE="$CONFIG_DIR/last-scheme"
+
+if [ -z "$SCHEME" ]; then
+  # Query available schemes
+  schemes=()
+  while IFS= read -r line; do
+    schemes+=("$line")
+  done < <(xcodebuild $XCODE_FLAG -list 2>&1 | sed -n '/Schemes:/,/^$/p' | tail -n +2 | sed 's/^[[:space:]]*//' | sed '/^$/d')
+
+  if [ ${#schemes[@]} -eq 0 ]; then
+    echo "Error: No schemes found"
+    exit 1
+  fi
+
+  # Filter out extensions, third-party frameworks, and test schemes
+  app_schemes=()
+  for s in "${schemes[@]}"; do
+    if echo "$s" | grep -qiE 'Extension$|Widget|Tests$|^Facebook$|^FBSDKCoreKit$|^MapboxMaps$|^RevenueCat'; then
+      continue
+    fi
+    app_schemes+=("$s")
+  done
+
+  # Fall back to all schemes if filtering removed everything
+  [ ${#app_schemes[@]} -eq 0 ] && app_schemes=("${schemes[@]}")
+
+  if [ ${#app_schemes[@]} -eq 1 ]; then
+    SCHEME="${app_schemes[0]}"
+  elif [ "$USE_LAST" = true ] && [ -f "$LAST_SCHEME_FILE" ]; then
+    SCHEME=$(cat "$LAST_SCHEME_FILE")
+    # Verify saved scheme still exists
+    found=false
+    for s in "${app_schemes[@]}"; do
+      [ "$s" = "$SCHEME" ] && found=true && break
+    done
+    if [ "$found" = false ]; then
+      echo "Warning: Last scheme '$SCHEME' no longer exists, showing picker..."
+      SCHEME=""
+    fi
+  fi
+
+  if [ -z "$SCHEME" ]; then
+    # Build fzf input, putting last-used scheme first
+    fzf_input=""
+    for s in "${app_schemes[@]}"; do
+      fzf_input+="$s"$'\n'
+    done
+    fzf_input="${fzf_input%$'\n'}"
+
+    if [ -f "$LAST_SCHEME_FILE" ]; then
+      last_scheme=$(cat "$LAST_SCHEME_FILE")
+      if echo "$fzf_input" | grep -qF "$last_scheme"; then
+        fzf_input=$(echo "$fzf_input" | grep -F "$last_scheme"; echo "$fzf_input" | grep -vF "$last_scheme")
+      fi
+    fi
+
+    SCHEME=$(echo "$fzf_input" | fzf --height "~10" --reverse --prompt "Scheme> " --no-info) || {
+      echo "No scheme selected"
+      exit 1
+    }
+  fi
+
+  # Save scheme choice
+  mkdir -p "$CONFIG_DIR"
+  echo "$SCHEME" > "$LAST_SCHEME_FILE"
+fi
+
+echo "Scheme: $SCHEME"
+
+# --- Resolve device ---
+resolve_device() {
+  # Gather devices from xctrace
+  device_lines=()
+
+  section=""
+  while IFS= read -r line; do
+    if [[ "$line" == "== Devices ==" ]]; then
+      section="physical"
+      continue
+    elif [[ "$line" == "== Simulators ==" ]]; then
+      section="simulator"
+      continue
+    fi
+
+    if [[ -z "$line" ]]; then continue; fi
+
+    # Normalize unicode (curly quotes, non-breaking spaces) for filtering
+    normalized=$(echo "$line" | sed 's/[^[:print:]]//g; s/  */ /g')
+    if echo "$normalized" | grep -qi "MacBook\|iMac\|Mac Pro\|Mac mini\|Mac Studio\|Apple.Watch"; then
+      continue
+    fi
+
+    # For simulators, only show iPhones/iPads
+    if [ "$section" = "simulator" ]; then
+      if ! echo "$normalized" | grep -qi "iPhone\|iPad"; then
+        continue
+      fi
+    fi
+
+    # Parse UDID from: "Name (version) (UDID)"
+    udid=$(echo "$line" | grep -oE '\(([0-9A-Fa-f-]+)\)$' | tr -d '()' || true)
+    name=$(echo "$line" | sed 's/ ([^)]*) *$//' | sed 's/ ([^)]*) *$//')
+
+    if [ -n "$udid" ] && [ -n "$name" ]; then
+      if [ "$section" = "physical" ]; then
+        device_lines+=("$name	$udid	physical")
+      else
+        device_lines+=("$name	$udid	simulator")
+      fi
+    fi
+  done <<< "$(xcrun xctrace list devices)"
+
+  if [ ${#device_lines[@]} -eq 0 ]; then
+    echo "No devices or simulators found"
+    exit 1
+  fi
+
+  # Build fzf input (display names)
+  fzf_input=""
+  for entry in "${device_lines[@]}"; do
+    name=$(echo "$entry" | cut -f1)
+    type=$(echo "$entry" | cut -f3)
+    fzf_input+="$name ($type)"$'\n'
+  done
+  fzf_input="${fzf_input%$'\n'}"
+
+  # Reorder: put last-used device first
+  if [ -f "$LAST_DEVICE_FILE" ]; then
+    last_choice=$(cat "$LAST_DEVICE_FILE")
+    if echo "$fzf_input" | grep -qF "$last_choice"; then
+      fzf_input=$(echo "$fzf_input" | grep -F "$last_choice"; echo "$fzf_input" | grep -vF "$last_choice")
+    fi
+  fi
+
+  # Pick device with fzf
+  selected=$(echo "$fzf_input" | fzf --height "~20" --reverse --prompt "Device> " --no-info) || {
+    echo "No device selected"
+    exit 1
+  }
+
+  # Find matching entry
+  for entry in "${device_lines[@]}"; do
+    name=$(echo "$entry" | cut -f1)
+    udid=$(echo "$entry" | cut -f2)
+    type=$(echo "$entry" | cut -f3)
+    if [ "$name ($type)" = "$selected" ]; then
+      DEVICE_ID="$udid"
+      DEVICE_TYPE="$type"
+      break
+    fi
+  done
+
+  if [ -z "$DEVICE_ID" ]; then
+    echo "Error: Could not match selected device"
+    exit 1
+  fi
+
+  # Save choice
+  mkdir -p "$CONFIG_DIR"
+  echo "$selected" > "$LAST_DEVICE_FILE"
+  echo "$DEVICE_ID" > "$CONFIG_DIR/last-device-id"
+  echo "$DEVICE_TYPE" > "$CONFIG_DIR/last-device-type"
+}
+
+DEVICE_ID=""
+DEVICE_TYPE=""
+
+if [ "$USE_LAST" = true ] && [ -f "$CONFIG_DIR/last-device-id" ]; then
+  DEVICE_ID=$(cat "$CONFIG_DIR/last-device-id")
+  DEVICE_TYPE=$(cat "$CONFIG_DIR/last-device-type")
+  selected=$(cat "$LAST_DEVICE_FILE")
+  echo "→ $selected ($DEVICE_ID)"
+elif [ "$USE_LAST" = true ]; then
+  echo "No previous device saved, showing picker..."
+  resolve_device
+else
+  resolve_device
+fi
+
+echo ""
+
+# --- Build ---
+if [ "$DEVICE_TYPE" = "simulator" ]; then
+  DESTINATION="platform=iOS Simulator,id=$DEVICE_ID"
+  PRODUCTS_DIR="Debug-iphonesimulator"
+else
+  DESTINATION="platform=iOS,id=$DEVICE_ID"
+  PRODUCTS_DIR="Debug-iphoneos"
+fi
+
+if [ "$CLEAN" = true ]; then
+  echo "Cleaning..."
+  xcodebuild $XCODE_FLAG \
+    -scheme "$SCHEME" \
+    -destination "$DESTINATION" \
+    clean
+fi
+
+# Get build settings to find exact output path
+BUILT_PRODUCTS_DIR=$(xcodebuild $XCODE_FLAG \
+  -scheme "$SCHEME" \
+  -destination "$DESTINATION" \
+  -showBuildSettings 2>/dev/null | grep ' BUILT_PRODUCTS_DIR =' | awk -F' = ' '{print $2}')
+
+PRODUCT_NAME=$(xcodebuild $XCODE_FLAG \
+  -scheme "$SCHEME" \
+  -destination "$DESTINATION" \
+  -showBuildSettings 2>/dev/null | grep ' PRODUCT_NAME =' | head -1 | awk -F' = ' '{print $2}')
+
+xcodebuild $XCODE_FLAG \
+  -scheme "$SCHEME" \
+  -destination "$DESTINATION" \
+  build
+
+# --- Find built app ---
+APP_PATH="$BUILT_PRODUCTS_DIR/${PRODUCT_NAME:-$SCHEME}.app"
+
+if [ ! -d "$APP_PATH" ]; then
+  echo "Error: Built app not found at $APP_PATH"
+  exit 1
+fi
+
+# --- Detect bundle ID from built app ---
+BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist" 2>/dev/null)
+if [ -z "$BUNDLE_ID" ]; then
+  echo "Error: Could not read bundle ID from $APP_PATH/Info.plist"
+  exit 1
+fi
+
+# --- Install & Launch with console output ---
+echo ""
+echo "Installing and launching ($BUNDLE_ID)..."
+echo "Log output below (Ctrl+C to stop):"
+echo "─────────────────────────────────────"
+
+if [ "$DEVICE_TYPE" = "simulator" ]; then
+  xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+  xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+  open -a Simulator
+  xcrun simctl launch --console --terminate-running-process "$DEVICE_ID" "$BUNDLE_ID"
+else
+  xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"
+  xcrun devicectl device process launch --device "$DEVICE_ID" --console --terminate-existing "$BUNDLE_ID"
+fi

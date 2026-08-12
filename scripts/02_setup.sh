@@ -180,6 +180,85 @@ setup_fzf() {
     fi
 }
 
+# Install the exact tmux plugin revisions used by this configuration. Keeping
+# plugins outside chezmoi avoids vendoring repositories while retaining a
+# reproducible terminal setup.
+install_tmux_plugin() {
+    local name="$1"
+    local url="$2"
+    local commit="$3"
+    local plugin_dir="$HOME/.config/tmux/plugins/$name"
+
+    if [[ ! -d "$plugin_dir/.git" ]]; then
+        info "Installing tmux plugin: $name"
+        mkdir -p "$(dirname "$plugin_dir")"
+        git clone --filter=blob:none --no-checkout "$url" "$plugin_dir"
+    elif [[ -n "$(git -C "$plugin_dir" status --porcelain)" ]]; then
+        warn "tmux plugin $name has local changes; leaving it untouched"
+        return
+    fi
+
+    if [[ "$(git -C "$plugin_dir" rev-parse HEAD 2>/dev/null || true)" == "$commit" ]]; then
+        return
+    fi
+
+    git -C "$plugin_dir" fetch --depth 1 origin "$commit"
+    git -C "$plugin_dir" checkout --detach "$commit"
+}
+
+setup_tmux() {
+    [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
+    command -v tmux >/dev/null 2>&1 || {
+        warn "tmux is not installed"
+        return
+    }
+
+    install_tmux_plugin tpm \
+        https://github.com/tmux-plugins/tpm.git \
+        e261deb1b47614eed3400089ce7197dc68acc4eb
+    install_tmux_plugin tmux-sensible \
+        https://github.com/tmux-plugins/tmux-sensible.git \
+        25cb91f42d020f675bb0a2ce3fbd3a5d96119efa
+    install_tmux_plugin tmux-palette \
+        https://github.com/eduwass/tmux-palette.git \
+        7caa11e845e0aa0515d013158df85613f3ec507f
+    install_tmux_plugin tmux-resurrect \
+        https://github.com/tmux-plugins/tmux-resurrect.git \
+        cff343cf9e81983d3da0c8562b01616f12e8d548
+    install_tmux_plugin tmux-gruvbox \
+        https://github.com/egel/tmux-gruvbox.git \
+        aeb30c7172a8ed8663409207814cf47d9df10d15
+    success "tmux plugins installed at pinned revisions"
+}
+
+# Kanata uses Karabiner's VirtualHID driver on macOS, but Karabiner's own
+# remapper should not process the same keyboard at the same time.
+setup_kanata() {
+    [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
+    command -v kanata >/dev/null 2>&1 || {
+        warn "kanata is not installed"
+        return
+    }
+
+    local driver_manager="/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager"
+    if [[ -x "$driver_manager" ]]; then
+        info "Activating the Karabiner VirtualHID driver used by Kanata..."
+        sudo "$driver_manager" activate
+    else
+        warn "Karabiner VirtualHID manager not found; open Karabiner-Elements once to finish driver installation"
+    fi
+
+    info "Starting Kanata as a root Homebrew service..."
+    sudo brew services restart kanata
+
+    if command -v jq >/dev/null 2>&1 &&
+        jq -e '.profiles[]? | select(.selected == true) | .simple_modifications | length > 0' \
+            "$HOME/.config/karabiner/karabiner.json" >/dev/null 2>&1; then
+        warn "Karabiner mappings are enabled; disable them if Kanata cannot grab the keyboard"
+    fi
+    success "Kanata service configured"
+}
+
 # AeroSpace refreshes this widget on focus/workspace changes. Pin the clean
 # upstream checkout so a fresh setup gets the same bar implementation.
 setup_ubersicht() {
@@ -248,6 +327,8 @@ setup_ssh          # Generate SSH keys first (needed for GitHub taps)
 install_packages   # Install Brewfile packages
 setup_ubersicht    # Install the workspace bar used by AeroSpace
 setup_github_ssh   # Add SSH key to GitHub (now that gh is installed)
+setup_tmux         # Install pinned terminal plugins
+setup_kanata       # Activate VirtualHID and start Kanata as a root service
 if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
     setup_xcode    # Configure Xcode when it is already installed
 fi

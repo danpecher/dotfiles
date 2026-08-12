@@ -1,0 +1,17 @@
+# Mole Whitelist - Protected paths won't be deleted
+# Default protections: Playwright browsers, HuggingFace models, Maven repo, Ollama models, Surge Mac, R renv, Finder metadata
+# Add one pattern per line to keep items safe.
+
+FINDER_METADATA
+{{ .chezmoi.homeDir }}/.cache/huggingface*
+{{ .chezmoi.homeDir }}/.gradle/caches/*
+{{ .chezmoi.homeDir }}/Library/Caches/pypoetry/virtualenvs*
+{{ .chezmoi.homeDir }}/Library/Caches/JetBrains*
+{{ .chezmoi.homeDir }}/Library/Caches/com.jetbrains.toolbox*
+{{ .chezmoi.homeDir }}/Library/Application Support/JetBrains*
+{{ .chezmoi.homeDir }}/Library/Caches/com.apple.finder
+{{ .chezmoi.homeDir }}/Library/Mobile Documents*
+{{ .chezmoi.homeDir }}/Library/Caches/com.apple.FontRegistry*
+{{ .chezmoi.homeDir }}/Library/Caches/com.apple.spotlight*
+{{ .chezmoi.homeDir }}/Library/Caches/com.apple.Spotlight*
+{{ .chezmoi.homeDir }}/Library/Caches/CloudKit*

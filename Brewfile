@@ -34,6 +34,8 @@ brew "kanata"            # Keyboard remapping
 brew "mcfly"             # Searchable shell history
 brew "mosh"              # Resilient remote shell
 brew "navi"              # Interactive command cheatsheets
+brew "mole"              # Mac cleanup tool; protected paths are managed by chezmoi
+brew "tmux"              # Terminal multiplexer used directly by ~/.zprofile
 brew "tmuxinator"        # tmux session manager
 brew "tree"              # Directory tree
 brew "wget"              # File downloader
@@ -69,6 +71,7 @@ brew "jetbrains/utils/kotlin-lsp"
 brew "xcode-build-server"
 brew "xcodes"            # Xcode version manager
 brew "cocoapods"         # iOS dependency manager
+brew "libpq"             # PostgreSQL client libraries and psql
 brew "flyctl"
 brew "render"            # Render CLI
 
@@ -92,10 +95,12 @@ cask "raycast"           # Spotlight replacement
 cask "notion"
 cask "figma"
 cask "obsidian"
+cask "xmind"
 
 # Utilities. The local cask points at the customized build in ~/Code/AeroSpace.
 cask "nikitabobko/local-tap/aerospace-dev"
 cask "hammerspoon"
+cask "karabiner-elements" # Supplies the VirtualHID driver required by Kanata
 cask "mitmproxy"
 cask "ngrok"
 cask "proxyman"
@@ -112,11 +117,14 @@ cask "codex"
 # =============================================================================
 cask "font-jetbrains-mono-nerd-font"
 cask "font-fira-code-nerd-font"
+cask "sf-symbols"
 
 # =============================================================================
 # VS Code Extensions
 # =============================================================================
 vscode "openai.chatgpt"
+vscode "adpyke.vscode-sql-formatter"
+vscode "alefragnani.bookmarks"
 vscode "anthropic.claude-code"
 vscode "asvetliakov.vscode-neovim"
 vscode "avetis.tokyo-night"
@@ -147,6 +155,7 @@ vscode "swiftlang.swift-vscode"
 vscode "teabyii.ayu"
 vscode "tompollak.lazygit-vscode"
 vscode "vadimcn.vscode-lldb"
+vscode "vitest.explorer"
 vscode "vscode-icons-team.vscode-icons"
 vscode "wayou.file-icons-mac"
 

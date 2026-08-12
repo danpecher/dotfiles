@@ -6,9 +6,17 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 for script in "$SCRIPT_DIR"/*.sh; do
     bash -n "$script"
 done
+bash -n "$DOTFILES_DIR/bin/executable_ios-build"
 zsh -n "$DOTFILES_DIR/dot_zshrc"
 ruby -c "$DOTFILES_DIR/Brewfile" >/dev/null
 ruby -c "$DOTFILES_DIR/Brewfile.minimal" >/dev/null
+jq empty "$DOTFILES_DIR/dot_config/tmux-palette/theme.json"
+jq empty "$DOTFILES_DIR/dot_config/tmux-palette/palettes/tools.json"
+yq eval '.' "$DOTFILES_DIR/dot_config/private_gh/private_config.yml" >/dev/null
+if command -v luac >/dev/null 2>&1; then
+    luac -p "$DOTFILES_DIR/dot_hammerspoon/init.lua"
+    luac -p "$DOTFILES_DIR/dot_hammerspoon/window_chooser.lua"
+fi
 # VS Code stores JSONC. The tracked files currently use full-line comments and
 # trailing commas, so normalize those features before validating as JSON.
 validate_jsonc() {
@@ -21,6 +29,7 @@ validate_jsonc() {
 }
 validate_jsonc "$DOTFILES_DIR/private_Library/Application Support/Code/User/settings.json"
 validate_jsonc "$DOTFILES_DIR/private_Library/Application Support/Code/User/keybindings.json"
+validate_jsonc "$DOTFILES_DIR/private_Library/Application Support/Code/User/snippets/pie.code-snippets"
 
 if command -v kanata >/dev/null 2>&1; then
     kanata --check -c "$DOTFILES_DIR/dot_config/kanata/kanata.kbd" >/dev/null
@@ -42,5 +51,16 @@ for profile in personal minimal; do
     } > "$config"
     chezmoi --config "$config" --source "$DOTFILES_DIR" --destination "$tmp_dir/home" apply --dry-run >/dev/null
 done
+
+rendered_gitconfig="$tmp_dir/gitconfig"
+chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
+    execute-template < "$DOTFILES_DIR/dot_gitconfig.tmpl" > "$rendered_gitconfig"
+git config --file "$rendered_gitconfig" --list >/dev/null
+
+rendered_claude_settings="$tmp_dir/claude-settings.json"
+chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
+    execute-template < "$DOTFILES_DIR/private_dot_claude/private_settings.json.tmpl" \
+    > "$rendered_claude_settings"
+jq empty "$rendered_claude_settings"
 
 printf 'validation passed\n'

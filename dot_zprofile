@@ -1,0 +1,9 @@
+
+# Added by OrbStack: command-line tools and integration
+# This won't be added again if you remove it.
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+
+# Launch tmux
+if [[ -z "$TMUX" && -t 0 && -t 1 ]] && command -v tmux >/dev/null; then
+  tmux attach -t main || tmux new -s main
+fi
