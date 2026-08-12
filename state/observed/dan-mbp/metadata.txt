@@ -1,5 +1,0 @@
-captured_at=2026-08-12T14:24:30Z
-profile=personal
-hostname=dan-mbp
-macos=15.7.7
-architecture=arm64

@@ -1,1 +1,0 @@
-Set SNAPSHOT_MAS=1 to query the signed-in App Store account.

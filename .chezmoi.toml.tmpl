@@ -1,5 +1,8 @@
 {{- $profiles := list "personal" "minimal" -}}
-{{- $profile := promptChoiceOnce . "profile" "Setup profile" $profiles "personal" -}}
+{{- $profile := env "PROFILE" -}}
+{{- if not (has $profile $profiles) -}}
+{{- $profile = promptChoiceOnce . "profile" "Setup profile" $profiles "personal" -}}
+{{- end -}}
 # chezmoi configuration
 # This template is used to generate ~/.config/chezmoi/chezmoi.toml
 

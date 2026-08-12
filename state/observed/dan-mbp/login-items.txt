@@ -1,1 +1,0 @@
-Set SNAPSHOT_GUI=1 to query login items interactively.

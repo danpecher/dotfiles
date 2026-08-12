@@ -1,4 +1,8 @@
 # Repository documentation and helpers belong in the source tree only.
+{{- $activeProfile := env "PROFILE" -}}
+{{- if not (has $activeProfile (list "personal" "minimal")) -}}
+{{- $activeProfile = get . "profile" | default "personal" -}}
+{{- end }}
 README.md
 Makefile
 Brewfile
@@ -9,3 +13,23 @@ state
 state/**
 scripts
 scripts/**
+
+# AeroSpace is intentionally dormant. Keep the source config for possible
+# future reuse without installing or managing it on current machines.
+.aerospace.toml
+
+{{ if eq $activeProfile "minimal" -}}
+# Personal workstation integrations are excluded from the minimal profile.
+.claude
+.claude/**
+.hammerspoon
+.hammerspoon/**
+.config/kanata
+.config/kanata/**
+.config/tmux-palette
+.config/tmux-palette/**
+.tmux.conf
+.zprofile
+.testcontainers.properties
+bin/ios-build
+{{ end -}}

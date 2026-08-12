@@ -180,13 +180,13 @@
 ;; ALIASES / OVERRIDES
 ;; ============================================================================
 
-;; Hyper+comma/period → F13/F16 for AeroSpace layout switching
-(defoverrides
-  (lctl lalt lmet lsft ,) (f13)
-  (lctl lalt lmet lsft .) (f16)
-  (lalt f17) (f17)
-  (lctl lalt lmet lsft f17) (f17)
-)
+;; AeroSpace overrides are intentionally disabled for now.
+;; (defoverrides
+;;   (lctl lalt lmet lsft ,) (f13)
+;;   (lctl lalt lmet lsft .) (f16)
+;;   (lalt f17) (f17)
+;;   (lctl lalt lmet lsft f17) (f17)
+;; )
 
 (defalias
   ;; Anti-repeat mechanism: briefly switch to nomods, then return to base

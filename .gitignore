@@ -1,0 +1,3 @@
+# Raw machine inventories are private diagnostics, not portable desired state.
+state/observed/*
+!state/observed/.gitkeep

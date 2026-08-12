@@ -11,11 +11,12 @@ separate secret/data backup:
 - application licenses and signed-in sessions
 - SSH private keys and recovery codes
 - application databases, documents, and browser profiles
-- Übersicht simple-bar preferences (stored in WebKit local storage; the widget
-  source itself is pinned and installed automatically)
 - Karabiner VirtualHID approval and Kanata Input Monitoring/Accessibility
   permissions. Karabiner supplies the driver; avoid enabling Karabiner mappings
   at the same time as Kanata because both can compete for keyboard input.
+  `make services` refuses to start Kanata while mappings remain in the selected
+  Karabiner profile; after they are disabled it enables Kanata at boot through
+  the root Homebrew service.
 - npm authentication. Keep tokens out of `.zshenv`, `.npmrc`, and this repository;
   inject `NPM_TOKEN` from a password manager or the macOS Keychain instead.
 

@@ -7,7 +7,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 BREWFILE="$(brewfile_for_profile)"
 
 section "Chezmoi diff"
-chezmoi --source "$DOTFILES_DIR" diff --no-pager || true
+chezmoi --source "$DOTFILES_DIR" diff --no-pager
 
 section "Homebrew bundle check"
 if brew bundle check --file="$BREWFILE"; then

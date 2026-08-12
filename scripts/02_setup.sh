@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Setup script - Install packages, development tools, and configure shell
+# Explicit package, service, and first-machine provisioning workflows.
 #
 # This script is called by 01_bootstrap.sh but can also be run standalone
 # after dotfiles have been applied via chezmoi.
@@ -18,6 +18,7 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 PROFILE="${PROFILE:-${SETUP_PROFILE:-personal}}"
+ACTION="${1:-bootstrap}"
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
@@ -112,16 +113,6 @@ install_packages() {
         if grep -q 'jetbrains/utils/kotlin-lsp' "$brewfile"; then
             brew tap jetbrains/utils
             brew trust --formula jetbrains/utils/kotlin-lsp
-        fi
-
-        if grep -q 'nikitabobko/local-tap/aerospace-dev' "$brewfile"; then
-            local custom_aerospace="$HOME/Code/AeroSpace/.release/AeroSpace-v0.0.0-SNAPSHOT.zip"
-            local local_cask
-            local_cask="$(brew --repository nikitabobko/local-tap 2>/dev/null)/Casks/aerospace-dev.rb"
-            if [[ ! -f "$custom_aerospace" || ! -f "$local_cask" ]]; then
-                error "Customized AeroSpace build or local cask is missing; see Brewfile comments"
-            fi
-            brew trust --cask nikitabobko/local-tap/aerospace-dev
         fi
 
         local bundle_file="$brewfile"
@@ -240,6 +231,17 @@ setup_kanata() {
         return
     }
 
+    local karabiner_config="$HOME/.config/karabiner/karabiner.json"
+    if command -v jq >/dev/null 2>&1 && [[ -f "$karabiner_config" ]] &&
+        jq -e '
+            .profiles[]?
+            | select(.selected == true)
+            | ((.simple_modifications // []) | length > 0)
+              or ((.complex_modifications.rules // []) | length > 0)
+        ' "$karabiner_config" >/dev/null; then
+        error "Karabiner mappings are enabled. Disable them before starting Kanata to avoid competing remappers."
+    fi
+
     local driver_manager="/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager"
     if [[ -x "$driver_manager" ]]; then
         info "Activating the Karabiner VirtualHID driver used by Kanata..."
@@ -248,39 +250,9 @@ setup_kanata() {
         warn "Karabiner VirtualHID manager not found; open Karabiner-Elements once to finish driver installation"
     fi
 
-    info "Starting Kanata as a root Homebrew service..."
-    sudo brew services restart kanata
-
-    if command -v jq >/dev/null 2>&1 &&
-        jq -e '.profiles[]? | select(.selected == true) | .simple_modifications | length > 0' \
-            "$HOME/.config/karabiner/karabiner.json" >/dev/null 2>&1; then
-        warn "Karabiner mappings are enabled; disable them if Kanata cannot grab the keyboard"
-    fi
-    success "Kanata service configured"
-}
-
-# AeroSpace refreshes this widget on focus/workspace changes. Pin the clean
-# upstream checkout so a fresh setup gets the same bar implementation.
-setup_ubersicht() {
-    [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
-
-    local widget_dir="$HOME/Library/Application Support/Übersicht/widgets/simple-bar"
-    local widget_commit="fb5cada548a05bd01f727772c0a18fd8c7f65b42"
-
-    if [[ ! -d "$widget_dir/.git" ]]; then
-        info "Installing pinned simple-bar widget..."
-        mkdir -p "$(dirname "$widget_dir")"
-        git clone https://github.com/Jean-Tinland/simple-bar.git "$widget_dir"
-    elif [[ -n "$(git -C "$widget_dir" status --porcelain)" ]]; then
-        warn "simple-bar has local changes; leaving it untouched"
-        return
-    fi
-
-    if [[ "$(git -C "$widget_dir" rev-parse HEAD)" != "$widget_commit" ]]; then
-        git -C "$widget_dir" fetch origin "$widget_commit"
-        git -C "$widget_dir" checkout --detach "$widget_commit"
-    fi
-    success "simple-bar is pinned at ${widget_commit:0:8}"
+    info "Enabling Kanata as a root Homebrew service at boot..."
+    sudo brew services start kanata
+    success "Kanata service enabled and started"
 }
 
 # Configure an existing Xcode installation. A bootstrap should not silently
@@ -322,19 +294,35 @@ setup_xcode() {
     fi
 }
 
-# Run setup steps
-setup_ssh          # Generate SSH keys first (needed for GitHub taps)
-install_packages   # Install Brewfile packages
-setup_ubersicht    # Install the workspace bar used by AeroSpace
-setup_github_ssh   # Add SSH key to GitHub (now that gh is installed)
-setup_tmux         # Install pinned terminal plugins
-setup_kanata       # Activate VirtualHID and start Kanata as a root service
-if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
-    setup_xcode    # Configure Xcode when it is already installed
-fi
-setup_mise         # Install dev tools via mise
-setup_shell        # Set zsh as default shell
-setup_fzf          # Configure fzf keybindings
+# Dispatch explicit workflows. "packages" and "services" are suitable for
+# repeat use; "bootstrap" contains interactive, account, and system setup.
+case "$ACTION" in
+    packages)
+        install_packages
+        setup_mise
+        setup_tmux
+        setup_fzf
+        ;;
+    services)
+        setup_kanata
+        ;;
+    bootstrap)
+        setup_ssh
+        install_packages
+        setup_github_ssh
+        setup_tmux
+        setup_kanata
+        if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
+            setup_xcode
+        fi
+        setup_mise
+        setup_shell
+        setup_fzf
+        ;;
+    *)
+        error "Unknown action: $ACTION (expected packages, services, or bootstrap)"
+        ;;
+esac
 
 echo ""
 success "Setup complete!"

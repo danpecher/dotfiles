@@ -145,20 +145,36 @@ is_local_checkout() {
     [[ -n "$REPO_ROOT" && -d "$REPO_ROOT/.git" ]]
 }
 
-# Initialize and apply dotfiles with chezmoi.
+# Initialize chezmoi configuration without touching destination files. Applying
+# is a separate, reviewed step even during bootstrap.
 if is_local_checkout; then
-    info "Applying dotfiles from local checkout: $REPO_ROOT"
-    chezmoi init --apply --source="$REPO_ROOT"
+    info "Initializing chezmoi from local checkout: $REPO_ROOT"
+    DOTFILES_DIR="$REPO_ROOT"
 elif [[ -d "$DOTFILES_DIR/.git" ]]; then
     info "Updating canonical checkout: $DOTFILES_DIR"
     git -C "$DOTFILES_DIR" pull --ff-only
-    chezmoi init --apply --source="$DOTFILES_DIR"
 else
     info "Cloning canonical checkout to $DOTFILES_DIR..."
-    info "You will be prompted for a profile, name, email, and GitHub username."
+    info "You will be prompted for your name, email, and GitHub username."
     mkdir -p "$(dirname "$DOTFILES_DIR")"
     git clone --branch "$DOTFILES_REF" "git@github.com:$DOTFILES_REPO.git" "$DOTFILES_DIR"
-    chezmoi init --apply --source="$DOTFILES_DIR"
+fi
+
+export PROFILE
+chezmoi init --source="$DOTFILES_DIR"
+
+echo ""
+info "Reviewing destination changes before apply..."
+chezmoi --source="$DOTFILES_DIR" status
+chezmoi --source="$DOTFILES_DIR" diff --no-pager
+echo ""
+read -p "Apply these chezmoi changes? [y/N] " apply_dotfiles
+if [[ "$apply_dotfiles" =~ ^[Yy]$ ]]; then
+    chezmoi --source="$DOTFILES_DIR" apply --interactive
+else
+    warn "Dotfiles were not applied. Bootstrap is stopping before package and service setup."
+    info "Review later with: cd $DOTFILES_DIR && make plan"
+    exit 0
 fi
 
 # Run the main setup script from the source repository. Helper scripts are
@@ -167,7 +183,7 @@ SETUP_SCRIPT="$DOTFILES_DIR/scripts/02_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
     info "Running setup script with profile: $PROFILE"
     chmod +x "$SETUP_SCRIPT"
-    PROFILE="$PROFILE" "$SETUP_SCRIPT"
+    PROFILE="$PROFILE" "$SETUP_SCRIPT" bootstrap
 else
     warn "Setup script not found at $SETUP_SCRIPT"
 fi

@@ -5,6 +5,7 @@
 #
 
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/macos-defaults-lib.sh"
 
 # Colors
 RED='\033[0;31m'
@@ -37,36 +38,20 @@ echo "  macOS System Preferences"
 echo "=========================================="
 echo ""
 
+info "Applying audited macOS defaults policy..."
+apply_managed_defaults
+success "Audited macOS defaults applied"
+
 ###############################################################################
 # General UI/UX (from NSGlobalDomain)
 ###############################################################################
 info "Configuring General UI/UX..."
-
-# Dark mode
-defaults write NSGlobalDomain AppleInterfaceStyle -string "Dark"
-
-# Natural scrolling
-defaults write NSGlobalDomain "com.apple.swipescrolldirection" -bool true
 
 # Disable beep sound on volume change
 defaults write NSGlobalDomain "com.apple.sound.beep.feedback" -int 0
 
 # Full keyboard access for all controls
 defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
-
-# Enable press and hold
-defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-
-# Fast keyboard repeat (for vim users)
-defaults write NSGlobalDomain InitialKeyRepeat -int 15
-defaults write NSGlobalDomain KeyRepeat -int 3
-
-# Disable auto-correct features
-defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
-defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
-defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
-defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
-defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 
 # Expand save/print panels by default
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
@@ -96,15 +81,9 @@ success "Menu Bar Clock configured"
 ###############################################################################
 info "Configuring Dock..."
 
-defaults write com.apple.dock minimize-to-application -bool true
 defaults write com.apple.dock show-process-indicators -bool true
-defaults write com.apple.dock launchanim -bool false
 defaults write com.apple.dock expose-animation-duration -float 0.1
-defaults write com.apple.dock mru-spaces -bool false
-defaults write com.apple.dock autohide-delay -float 0.0
 defaults write com.apple.dock autohide-time-modifier -float 0.3
-defaults write com.apple.dock autohide -bool true
-defaults write com.apple.dock show-recents -bool false
 defaults write com.apple.dock tilesize -int 48
 
 # Set Dock apps (persistent-apps)
@@ -175,15 +154,10 @@ success "Dock configured"
 info "Configuring Finder..."
 
 defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
-defaults write com.apple.finder AppleShowAllExtensions -bool true
-defaults write com.apple.finder AppleShowAllFiles -bool true
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 defaults write com.apple.finder QuitMenuItem -bool true
-defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
 defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
-defaults write com.apple.finder _FXSortFoldersFirst -bool true
-defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 
 # Show drives on desktop
 defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool true
@@ -215,30 +189,6 @@ defaults write com.apple.AppleMultitouchTrackpad FirstClickThreshold -int 0
 success "Trackpad configured"
 
 ###############################################################################
-# Desktop Services
-###############################################################################
-info "Configuring Desktop Services..."
-
-# Avoid creating .DS_Store files on network or USB volumes
-defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
-defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
-
-success "Desktop Services configured"
-
-###############################################################################
-# Spaces
-###############################################################################
-info "Configuring Spaces..."
-
-# Displays have separate spaces
-defaults write com.apple.spaces "spans-displays" -int 0
-
-# Auto-switch to space when switching to app
-defaults write .GlobalPreferences AppleSpacesSwitchOnActivate -bool true
-
-success "Spaces configured"
-
-###############################################################################
 # Window Manager
 ###############################################################################
 info "Configuring Window Manager..."
@@ -252,33 +202,9 @@ defaults write com.apple.WindowManager StandardHideWidgets -int 0
 success "Window Manager configured"
 
 ###############################################################################
-# Screen Saver & Security
-###############################################################################
-info "Configuring Screen Saver & Security..."
-
-# Require password immediately after sleep
-defaults write com.apple.screensaver askForPassword -int 1
-defaults write com.apple.screensaver askForPasswordDelay -int 0
-
-success "Screen Saver & Security configured"
-
-###############################################################################
-# Screen Capture
-###############################################################################
-info "Configuring Screen Capture..."
-
-defaults write com.apple.screencapture location -string "~/Desktop"
-defaults write com.apple.screencapture type -string "png"
-
-success "Screen Capture configured"
-
-###############################################################################
 # Privacy
 ###############################################################################
 info "Configuring Privacy..."
-
-# Disable personalized ads
-defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
 
 # Prevent Photos from opening when devices are plugged in
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true
@@ -313,16 +239,6 @@ info "Configuring Safari (some settings may require manual configuration)..."
 success "Safari configured (some settings may need manual setup)"
 
 ###############################################################################
-# Login Window
-###############################################################################
-info "Configuring Login Window..."
-
-# Disable guest user
-sudo defaults write /Library/Preferences/com.apple.loginwindow GuestEnabled -bool false
-
-success "Login Window configured"
-
-###############################################################################
 # Control Center
 ###############################################################################
 info "Configuring Control Center..."
@@ -340,19 +256,6 @@ defaults write com.apple.controlcenter "NSStatusItem Visible NowPlaying" -bool f
 defaults write com.apple.menuextra.battery ShowPercent -string "YES"
 
 success "Control Center configured"
-
-###############################################################################
-# Software Update
-###############################################################################
-info "Configuring Software Update..."
-
-defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
-defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
-defaults write com.apple.SoftwareUpdate CriticalUpdateInstall -int 1
-defaults write com.apple.SoftwareUpdate AutomaticallyInstallMacOSUpdates -bool true
-defaults write com.apple.commerce AutoUpdate -bool true
-
-success "Software Update configured"
 
 ###############################################################################
 # Spotlight (disable for Raycast)
@@ -410,7 +313,8 @@ add_login_item() {
 }
 
 add_login_item "/Applications/Raycast.app"
-add_login_item "/Applications/AeroSpace.app"
+# AeroSpace is intentionally disabled; do not add it as a login item.
+# add_login_item "/Applications/AeroSpace.app"
 add_login_item "/Applications/MonitorControl.app"
 
 success "Login Items configured"

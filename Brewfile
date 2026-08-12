@@ -5,7 +5,8 @@
 # =============================================================================
 # Taps
 # =============================================================================
-tap "nikitabobko/tap"
+# AeroSpace disabled for now:
+# tap "nikitabobko/tap"
 tap "jetbrains/utils"
 
 # =============================================================================
@@ -97,15 +98,15 @@ cask "figma"
 cask "obsidian"
 cask "xmind"
 
-# Utilities. The local cask points at the customized build in ~/Code/AeroSpace.
-cask "nikitabobko/local-tap/aerospace-dev"
+# AeroSpace and its workspace bar are intentionally disabled for now.
+# cask "nikitabobko/local-tap/aerospace-dev"
 cask "hammerspoon"
 cask "karabiner-elements" # Supplies the VirtualHID driver required by Kanata
 cask "mitmproxy"
 cask "ngrok"
 cask "proxyman"
 cask "rectangle"
-cask "ubersicht"         # Runs simple-bar for the AeroSpace workspace display
+# cask "ubersicht"
 cask "monitorcontrol"    # External monitor brightness
 
 # AI

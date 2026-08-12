@@ -1,12 +1,15 @@
 SHELL := /bin/bash
 PROFILE ?= personal
 
-.PHONY: help plan apply doctor snapshot validate macos-defaults cleanup-preview
+.PHONY: help plan apply packages services bootstrap doctor snapshot validate macos-defaults cleanup-preview
 
 help:
 	@printf '%s\n' \
 	  'make plan              Show drift; change nothing' \
-	  'make apply             Reconcile dotfiles, Homebrew, extensions, and mise' \
+	  'make apply             Reconcile chezmoi-managed files only' \
+	  'make packages          Install declared packages, runtimes, and plugins' \
+	  'make services          Configure/start declared background services' \
+	  'make bootstrap         Run interactive first-machine provisioning' \
 	  'make doctor            Check desired state; change nothing' \
 	  'make snapshot          Capture the current machine inventory' \
 	  'make validate          Validate repository syntax and rendering' \
@@ -20,6 +23,15 @@ plan:
 
 apply:
 	@PROFILE="$(PROFILE)" ./scripts/06_apply.sh
+
+packages:
+	@PROFILE="$(PROFILE)" ./scripts/02_setup.sh packages
+
+services:
+	@PROFILE="$(PROFILE)" ./scripts/02_setup.sh services
+
+bootstrap:
+	@PROFILE="$(PROFILE)" ./scripts/01_bootstrap.sh
 
 doctor:
 	@PROFILE="$(PROFILE)" ./scripts/04_audit.sh

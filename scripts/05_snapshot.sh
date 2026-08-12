@@ -64,4 +64,4 @@ fi
 capture system-extensions.txt systemextensionsctl list
 
 info "Snapshot written to $OUT_DIR"
-info "Review it with: git -C $DOTFILES_DIR diff -- state/observed"
+info "Raw snapshots are git-ignored private diagnostics; review files in place."
