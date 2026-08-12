@@ -1,3 +1,4 @@
+config-version = 2
 # Place a copy of this config to ~/.aerospace.toml
 # After that, you can edit ~/.aerospace.toml to your liking
 
@@ -6,6 +7,21 @@
 
 # Start AeroSpace at login
 start-at-login = true
+focus-follows-mouse.enabled = false
+
+on-focus-changed = [
+  "exec-and-forget osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'",
+]
+
+exec-on-workspace-change = [
+  '/bin/zsh',
+  '-c',
+  '/usr/bin/osascript -e "tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\""',
+]
+
+# after-startup-command = [
+#    'exec-and-forget borders active_color=0xb3ffffff inactive_color=0x00000000 width=5.0 blacklist=Simulator'
+# ]
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
@@ -14,10 +30,13 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 # See: https://nikitabobko.github.io/AeroSpace/guide#layouts
 # The 'accordion-padding' specifies the size of accordion padding
 # You can set 0 to disable the padding feature
-accordion-padding = 50
+accordion-padding = 24
 
-# Possible values: tiles|accordion
-default-root-container-layout = 'tiles'
+# Possible values: tiles|accordion|master
+default-root-container-layout = 'master'
+
+# Master layout: ratio of master area (0.0 to 1.0)
+default-master-ratio = 0.55
 
 # Possible values: horizontal|vertical|auto
 # 'auto' means: wide monitor (anything wider than high) gets horizontal orientation,
@@ -54,7 +73,7 @@ inner.horizontal = 8
 inner.vertical = 8
 outer.left = 8
 outer.bottom = 8
-outer.top = 8
+outer.top = 8 #16
 outer.right = 8
 
 # 'main' binding mode declaration
@@ -81,10 +100,32 @@ outer.right = 8
 # All possible commands: https://nikitabobko.github.io/AeroSpace/commands
 # See: https://nikitabobko.github.io/AeroSpace/commands#layout
 
-alt-slash = 'layout tiles horizontal vertical'
-alt-comma = 'layout accordion horizontal vertical'
+# f13 = 'layout accordion horizontal vertical'
+# f16 = 'layout h_master v_master'
+# f17 = 'layout tiles horizontal vertical'
 
-alt-shift-f = 'fullscreen'
+alt-enter = '''exec-and-forget osascript -e '
+tell application "Ghostty"
+    if it is running
+        tell application "System Events" to tell process "Ghostty"
+            click menu item "New Window" of menu "File" of menu bar 1
+        end tell
+    else
+        activate
+    end if
+end tell'
+'''
+
+f13 = 'layout v_tiles h_tiles'
+f16 = 'layout h_deck h_master'
+f17 = 'layout tabbed'
+ctrl-alt-shift-cmd-g = 'layout grid'
+ctrl-alt-shift-cmd-z = 'zoom'
+
+# Swap focused window with master window
+ctrl-alt-shift-cmd-enter = 'swap-master'
+
+ctrl-alt-shift-cmd-f = 'fullscreen'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#focus
 ctrl-alt-shift-cmd-h = 'focus left'
@@ -105,19 +146,17 @@ alt-equal = 'resize smart +50'
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
 ctrl-alt-shift-cmd-u = 'workspace Web'
 ctrl-alt-shift-cmd-i = 'workspace Code'
-# ctrl-alt-shift-cmd-d = 'workspace Cursor'
-ctrl-alt-shift-cmd-m = 'workspace Files'
-
-ctrl-alt-shift-cmd-n = 'workspace Extra1'
-ctrl-alt-shift-cmd-o = 'workspace Git'
+ctrl-alt-shift-cmd-y = 'workspace Files'
+ctrl-alt-shift-cmd-m = 'workspace Comm'
+ctrl-alt-shift-cmd-o = 'workspace Org'
+ctrl-alt-shift-cmd-n = 'workspace Terminal'
 
 alt-u = 'move-node-to-workspace Web --focus-follows-window'
 alt-i = 'move-node-to-workspace Code --focus-follows-window'
-# alt-d = 'move-node-to-workspace Cursor --focus-follows-window'
-alt-m = 'move-node-to-workspace Files --focus-follows-window'
-
-alt-n = 'move-node-to-workspace Extra1 --focus-follows-window'
-alt-o = 'move-node-to-workspace Git --focus-follows-window'
+alt-y = 'move-node-to-workspace Files --focus-follows-window'
+alt-m = 'move-node-to-workspace Comm --focus-follows-window'
+alt-o = 'move-node-to-workspace Org --focus-follows-window'
+alt-n = 'move-node-to-workspace Terminal --focus-follows-window'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
 alt-tab = 'workspace-back-and-forth'
@@ -132,11 +171,9 @@ ctrl-alt-shift-cmd-semicolon = 'mode service'
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 [mode.service.binding]
 esc = ['reload-config', 'mode main']
-r = ['flatten-workspace-tree', 'mode main'] # reset layout
-f = [
-    'layout floating tiling',
-    'mode main',
-] # Toggle between floating and tiling layout
+r = ['flatten-workspace-tree', 'mode main']
+f = ['layout floating tiling', 'mode main']
+b = ['balance-sizes', 'mode main']
 backspace = ['close-all-windows-but-current', 'mode main']
 
 
@@ -145,72 +182,83 @@ ctrl-alt-shift-cmd-j = ['join-with down', 'mode main']
 ctrl-alt-shift-cmd-k = ['join-with up', 'mode main']
 ctrl-alt-shift-cmd-l = ['join-with right', 'mode main']
 
+# Workspace-specific default layouts
+[workspace-defaults.Code]
+layout = 'master'
+master-ratio = 0.55
+
+[workspace-defaults.Terminal]
+layout = 'grid'
+orientation = 'horizontal'
+
 ### Custom
+{{- $workspaceByApp := dict
+    "com.apple.Safari" "Web"
+    "com.google.Chrome" "Web"
+    "app.zen-browser.zen" "Web"
+    "com.google.android.studio" "Code"
+    "com.insomnia.app" "Code"
+    "com.jetbrains.pycharm" "Code"
+    "com.microsoft.VSCode" "Code"
+    "com.openai.codex" "Code"
+    "com.openai.sky.CUAService" "Code"
+    "dev.zed.Zed" "Code"
+    "com.apple.MobileSMS" "Comm"
+    "com.linear" "Comm"
+    "com.tinyspeck.slackmacgap" "Comm"
+-}}
+{{- $startupWorkspaceByApp := dict
+    "com.apple.Preview" "Files"
+    "com.apple.dt.Xcode" "Code"
+    "com.apple.finder" "Files"
+    "com.mitchellh.ghostty" "Terminal"
+    "com.apple.iCal" "Org"
+    "com.apple.reminders" "Org"
+    "md.obsidian" "Org"
+-}}
+
+# Rules that do more than assign an app to a workspace stay explicit.
 [[on-window-detected]]
 if.app-id = "app.zen-browser.zen"
 if.window-title-regex-substring = "Picture-in-Picture"
 run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = "com.toggl.daneel"
-run = 'layout floating'
-
-[[on-window-detected]]
-if.app-id = 'com.cisco.secureclient.gui'
-run = 'layout floating'
-
-[[on-window-detected]]
 if.app-id = 'com.tomito.tomito'
 run = 'layout floating'
 
-# --- Workspace: Xcode ---
-# disabled because of cmd+p
-# [[on-window-detected]]
-# if.app-id = "com.apple.dt.Xcode"
-# run = "move-node-to-workspace Code"
-
 [[on-window-detected]]
+if.during-aerospace-startup = true
 if.app-id = "com.apple.iphonesimulator"
 run = ["layout floating", "move-node-to-workspace Code"]
 
-# --- Workspace: Zen ---
 [[on-window-detected]]
-if.app-id = "app.zen-browser.zen"
-run = "move-node-to-workspace Web"
+if.during-aerospace-startup = false
+if.app-id = "com.apple.iphonesimulator"
+run = "layout floating"
 
-# --- Workspace: Fork ---
+# App-to-workspace assignments generated from the maps above.
+{{ range $appID := keys $startupWorkspaceByApp | sortAlpha }}
 [[on-window-detected]]
-if.app-id = "com.DanPristupov.Fork"
-run = ['layout floating', 'move-node-to-workspace Git']
+if.during-aerospace-startup = true
+if.app-id = {{ $appID | quote }}
+run = "move-node-to-workspace {{ get $startupWorkspaceByApp $appID }}"
+{{ end }}
+{{ range $appID := keys $workspaceByApp | sortAlpha }}
+[[on-window-detected]]
+if.app-id = {{ $appID | quote }}
+run = "move-node-to-workspace {{ get $workspaceByApp $appID }}"
+{{ end }}
 
-# --- Workspace: Safari ---
+# --- Float by default ---
 [[on-window-detected]]
-if.app-id = "com.apple.Safari"
-run = "move-node-to-workspace Web"
-
-# --- Workspace: Communication ---
-[[on-window-detected]]
-if.app-id = "com.tinyspeck.slackmacgap"
-run = "move-node-to-workspace Comm"
-
-[[on-window-detected]]
-if.app-id = "com.apple.mail"
-run = "move-node-to-workspace Comm"
-
-# --- Workspace: Android Dev ---
-[[on-window-detected]]
-if.app-id = "com.google.android.studio"
-run = "move-node-to-workspace Extra1"
-
-# --- Workspace: Files ---
-[[on-window-detected]]
-if.app-id = "com.apple.finder"
-run = "move-node-to-workspace Files"
+if.app-id = 'com.apple.Passwords'
+run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = "com.apple.Preview"
-run = "move-node-to-workspace Files"
+if.app-id = 'org.xquartz.X11'
+run = 'layout floating'
 
 [[on-window-detected]]
-if.app-id = "com.apple.reminders"
-run = "move-node-to-workspace TODO"
+if.app-id = "com.toggl.daneel"
+run = 'layout floating'

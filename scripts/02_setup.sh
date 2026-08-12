@@ -6,7 +6,7 @@
 # after dotfiles have been applied via chezmoi.
 #
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -17,6 +17,7 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
+PROFILE="${PROFILE:-${SETUP_PROFILE:-personal}}"
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
@@ -37,7 +38,7 @@ fi
 
 echo ""
 echo "=========================================="
-echo "  Setup - Packages & Configuration"
+echo "  Setup - $PROFILE Profile"
 echo "=========================================="
 echo ""
 
@@ -91,14 +92,52 @@ setup_github_ssh() {
     fi
 }
 
-# Install packages from Brewfile
+brewfile_for_profile() {
+    case "$PROFILE" in
+        personal|full) printf '%s/Brewfile\n' "$DOTFILES_DIR" ;;
+        minimal|work) printf '%s/Brewfile.minimal\n' "$DOTFILES_DIR" ;;
+        *) error "Unknown profile: $PROFILE" ;;
+    esac
+}
+
+# Install packages from the selected Brewfile. This is additive; cleanup is a
+# separate preview-only workflow.
 install_packages() {
-    info "Installing packages from Brewfile..."
-    if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
-        brew bundle --file="$DOTFILES_DIR/Brewfile"
+    local brewfile
+    brewfile="$(brewfile_for_profile)"
+    info "Installing packages from $(basename "$brewfile")..."
+    if [[ -f "$brewfile" ]]; then
+        # Homebrew 6 requires explicit trust for third-party formulae/casks.
+        # Scope trust to the exact packages instead of trusting whole taps.
+        if grep -q 'jetbrains/utils/kotlin-lsp' "$brewfile"; then
+            brew tap jetbrains/utils
+            brew trust --formula jetbrains/utils/kotlin-lsp
+        fi
+
+        if grep -q 'nikitabobko/local-tap/aerospace-dev' "$brewfile"; then
+            local custom_aerospace="$HOME/Code/AeroSpace/.release/AeroSpace-v0.0.0-SNAPSHOT.zip"
+            local local_cask
+            local_cask="$(brew --repository nikitabobko/local-tap 2>/dev/null)/Casks/aerospace-dev.rb"
+            if [[ ! -f "$custom_aerospace" || ! -f "$local_cask" ]]; then
+                error "Customized AeroSpace build or local cask is missing; see Brewfile comments"
+            fi
+            brew trust --cask nikitabobko/local-tap/aerospace-dev
+        fi
+
+        local bundle_file="$brewfile"
+        local temp_brewfile=""
+        if grep -Eq '^mas ' "$brewfile" && command -v mas >/dev/null 2>&1 && ! mas account &>/dev/null; then
+            temp_brewfile="$(mktemp "${TMPDIR:-/tmp}/Brewfile.XXXXXX")"
+            grep -Ev '^mas ' "$brewfile" > "$temp_brewfile"
+            bundle_file="$temp_brewfile"
+            warn "Not signed into the App Store; skipping mas entries"
+        fi
+
+        brew bundle --file="$bundle_file"
+        [[ -z "$temp_brewfile" ]] || rm -f "$temp_brewfile"
         success "Brewfile packages installed"
     else
-        warn "Brewfile not found at $DOTFILES_DIR/Brewfile"
+        error "Brewfile not found: $brewfile"
     fi
 }
 
@@ -141,7 +180,32 @@ setup_fzf() {
     fi
 }
 
-# Install Xcode via xcodes
+# AeroSpace refreshes this widget on focus/workspace changes. Pin the clean
+# upstream checkout so a fresh setup gets the same bar implementation.
+setup_ubersicht() {
+    [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
+
+    local widget_dir="$HOME/Library/Application Support/Übersicht/widgets/simple-bar"
+    local widget_commit="fb5cada548a05bd01f727772c0a18fd8c7f65b42"
+
+    if [[ ! -d "$widget_dir/.git" ]]; then
+        info "Installing pinned simple-bar widget..."
+        mkdir -p "$(dirname "$widget_dir")"
+        git clone https://github.com/Jean-Tinland/simple-bar.git "$widget_dir"
+    elif [[ -n "$(git -C "$widget_dir" status --porcelain)" ]]; then
+        warn "simple-bar has local changes; leaving it untouched"
+        return
+    fi
+
+    if [[ "$(git -C "$widget_dir" rev-parse HEAD)" != "$widget_commit" ]]; then
+        git -C "$widget_dir" fetch origin "$widget_commit"
+        git -C "$widget_dir" checkout --detach "$widget_commit"
+    fi
+    success "simple-bar is pinned at ${widget_commit:0:8}"
+}
+
+# Configure an existing Xcode installation. A bootstrap should not silently
+# download a multi-gigabyte application; install Xcode explicitly when needed.
 setup_xcode() {
     if ! command -v xcodes &>/dev/null; then
         warn "xcodes not found - should have been installed via Brewfile"
@@ -153,14 +217,11 @@ setup_xcode() {
     xcode_app=$(find /Applications -maxdepth 1 -name "Xcode*.app" -type d 2>/dev/null | head -1)
 
     if [[ -z "$xcode_app" ]]; then
-        info "Installing latest Xcode via xcodes (this may take a while)..."
-        info "Note: You may be prompted to sign in with your Apple ID"
-        xcodes install --latest --experimental-unxip
-        xcode_app=$(find /Applications -maxdepth 1 -name "Xcode*.app" -type d 2>/dev/null | head -1)
-        success "Xcode installed"
-    else
-        success "Xcode already installed: $(basename "$xcode_app")"
+        warn "Xcode is not installed; install it explicitly with: xcodes install --latest"
+        return
     fi
+
+    success "Xcode already installed: $(basename "$xcode_app")"
 
     # Set Xcode as active developer directory (must happen before xcodebuild commands)
     if [[ -n "$xcode_app" && -d "$xcode_app/Contents/Developer" ]]; then
@@ -185,8 +246,11 @@ setup_xcode() {
 # Run setup steps
 setup_ssh          # Generate SSH keys first (needed for GitHub taps)
 install_packages   # Install Brewfile packages
+setup_ubersicht    # Install the workspace bar used by AeroSpace
 setup_github_ssh   # Add SSH key to GitHub (now that gh is installed)
-setup_xcode        # Install Xcode via xcodes
+if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
+    setup_xcode    # Configure Xcode when it is already installed
+fi
 setup_mise         # Install dev tools via mise
 setup_shell        # Set zsh as default shell
 setup_fzf          # Configure fzf keybindings

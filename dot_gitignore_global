@@ -1,6 +1,8 @@
 # Global gitignore
 # These files are ignored in all repositories
 
+settings-localdb.yaml
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -34,6 +36,7 @@ Temporary Items
 *.swp
 *.swo
 *~
+buildServer.json
 
 # Environment files
 .env
@@ -61,7 +64,6 @@ logs/
 *.jar
 *.rar
 *.tar
-*.zip
 
 # Node
 node_modules/

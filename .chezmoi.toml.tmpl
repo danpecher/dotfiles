@@ -1,7 +1,12 @@
+{{- $profiles := list "personal" "minimal" -}}
+{{- $profile := promptChoiceOnce . "profile" "Setup profile" $profiles "personal" -}}
 # chezmoi configuration
 # This template is used to generate ~/.config/chezmoi/chezmoi.toml
 
+sourceDir = {{ .chezmoi.sourceDir | quote }}
+
 [data]
+    profile = {{ $profile | quote }}
     name = "{{ promptStringOnce . "name" "Your full name" }}"
     email = "{{ promptStringOnce . "email" "Your email address" }}"
     github_username = "{{ promptStringOnce . "github_username" "Your GitHub username" }}"

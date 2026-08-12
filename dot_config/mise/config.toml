@@ -4,15 +4,16 @@
 [settings]
 auto_install = true
 verbose = false
+ruby.compile = false  # use mise's precompiled Ruby distribution
 
 [tools]
-node = "lts"
+node = "latest"
 python = "latest"
-# ruby = "3"
-# go = "latest"
-# rust = "stable"
-# java = "latest"
-bun = "latest"
+ruby = "latest"
+java = "21"
+uv = "latest"
+gradle = "latest"
+pnpm = "latest"
 
 [env]
 EDITOR = "nvim"
@@ -31,7 +32,3 @@ NODE_OPTIONS = "--max-old-space-size=4096"
 # Python
 PYTHONDONTWRITEBYTECODE = "1"  # no .pyc files
 PIP_REQUIRE_VIRTUALENV = "true"  # prevent accidental global installs
-
-# Go
-GOPATH = "{{env.HOME}}/go"
-GOBIN = "{{env.HOME}}/go/bin"

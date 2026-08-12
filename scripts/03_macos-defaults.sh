@@ -4,7 +4,7 @@
 # Based on nix-darwin system.nix configuration
 #
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -279,9 +279,6 @@ info "Configuring Privacy..."
 
 # Disable personalized ads
 defaults write com.apple.AdLib allowApplePersonalizedAdvertising -bool false
-
-# Disable app quarantine dialog
-defaults write com.apple.LaunchServices LSQuarantine -bool false
 
 # Prevent Photos from opening when devices are plugged in
 defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool true

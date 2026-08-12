@@ -3,14 +3,14 @@
 # Bootstrap script - Complete macOS setup from scratch
 #
 # Usage (run in a new shell to preserve TTY for sudo prompts):
-#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)"
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/master/scripts/01_bootstrap.sh)"
 #
 # Or clone and run:
 #   git clone https://github.com/danpecher/dotfiles.git
 #   cd dotfiles && ./scripts/01_bootstrap.sh
 #
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -20,7 +20,15 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 DOTFILES_REPO="danpecher/dotfiles"
-DOTFILES_DIR="$HOME/.local/share/chezmoi"
+DOTFILES_DIR="${DOTFILES_DIR:-$HOME/Code/dotfiles}"
+DOTFILES_REF="${DOTFILES_REF:-master}"
+PROFILE="${PROFILE:-personal}"
+REPO_ROOT=""
+if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    candidate_root="$(cd "$SCRIPT_DIR/.." && pwd)"
+    [[ -d "$candidate_root/.git" ]] && REPO_ROOT="$candidate_root"
+fi
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
@@ -40,7 +48,7 @@ echo ""
 
 # Check if running non-interactively (piped input)
 if [[ ! -t 0 ]]; then
-    error "This script requires interactive input for sudo prompts.\nPlease run with: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/main/scripts/01_bootstrap.sh)\""
+    error "This script requires interactive input for sudo prompts.\nPlease run with: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/master/scripts/01_bootstrap.sh)\""
 fi
 
 # Generate SSH key early (needed because git config rewrites HTTPS to SSH)
@@ -133,22 +141,33 @@ brew install chezmoi git gh
 # Add SSH key to GitHub (before chezmoi applies git config with SSH URL rewriting)
 setup_github_ssh
 
-# Initialize and apply dotfiles with chezmoi
-if [[ -d "$DOTFILES_DIR" ]]; then
-    info "Updating dotfiles..."
-    chezmoi update
+is_local_checkout() {
+    [[ -n "$REPO_ROOT" && -d "$REPO_ROOT/.git" ]]
+}
+
+# Initialize and apply dotfiles with chezmoi.
+if is_local_checkout; then
+    info "Applying dotfiles from local checkout: $REPO_ROOT"
+    chezmoi init --apply --source="$REPO_ROOT"
+elif [[ -d "$DOTFILES_DIR/.git" ]]; then
+    info "Updating canonical checkout: $DOTFILES_DIR"
+    git -C "$DOTFILES_DIR" pull --ff-only
+    chezmoi init --apply --source="$DOTFILES_DIR"
 else
-    info "Initializing dotfiles from $DOTFILES_REPO..."
-    info "You will be prompted for your name, email, and GitHub username."
-    chezmoi init --apply "$DOTFILES_REPO"
+    info "Cloning canonical checkout to $DOTFILES_DIR..."
+    info "You will be prompted for a profile, name, email, and GitHub username."
+    mkdir -p "$(dirname "$DOTFILES_DIR")"
+    git clone --branch "$DOTFILES_REF" "git@github.com:$DOTFILES_REPO.git" "$DOTFILES_DIR"
+    chezmoi init --apply --source="$DOTFILES_DIR"
 fi
 
-# Run the main setup script
+# Run the main setup script from the source repository. Helper scripts are
+# intentionally ignored by chezmoi and are not copied into the home directory.
 SETUP_SCRIPT="$DOTFILES_DIR/scripts/02_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
-    info "Running setup script..."
+    info "Running setup script with profile: $PROFILE"
     chmod +x "$SETUP_SCRIPT"
-    "$SETUP_SCRIPT"
+    PROFILE="$PROFILE" "$SETUP_SCRIPT"
 else
     warn "Setup script not found at $SETUP_SCRIPT"
 fi

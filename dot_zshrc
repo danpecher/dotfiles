@@ -9,12 +9,18 @@ elif [[ -f "/usr/local/bin/brew" ]]; then
     eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+# Personal scripts. zsh keeps this array unique, avoiding PATH growth on reload.
+typeset -U path PATH
+path=("$HOME/bin" "$HOME/.local/bin" $path)
+
 # =============================================================================
 # mise - Development tool version manager
 # =============================================================================
 if command -v mise &>/dev/null; then
     eval "$(mise activate zsh)"
 fi
+
+[[ ! -o interactive ]] && return
 
 # =============================================================================
 # Prompt - Starship
@@ -30,6 +36,15 @@ fi
 if command -v zoxide &>/dev/null; then
     eval "$(zoxide init zsh --cmd cd)"
 fi
+
+# Open yazi and leave the shell in its final directory.
+function y() {
+    local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd
+    command yazi "$@" --cwd-file="$tmp"
+    IFS= read -r -d '' cwd < "$tmp"
+    [[ -n "$cwd" && "$cwd" != "$PWD" ]] && builtin cd -- "$cwd"
+    command rm -f -- "$tmp"
+}
 
 # fzf - fuzzy finder
 if [[ -f ~/.fzf.zsh ]]; then
@@ -76,8 +91,8 @@ fi
 if command -v bat &>/dev/null; then
     alias cat='bat'
 fi
-alias find="fd"
-alias grep="rg"
+alias find='fd'
+alias grep='rg'
 
 # Git
 alias g='git'
@@ -99,14 +114,15 @@ alias ghpv='gh pr view --web'
 alias lg='lazygit'
 
 # Shortcuts
-alias c='clear'
+alias cl='clear'
+alias c='EDITOR="zed-preview --wait" claude'
 alias h='history'
 alias j='jobs -l'
 alias path='echo -e ${PATH//:/\\n}'
 alias now='date +"%T"'
 alias today='date +"%Y-%m-%d"'
 
-# Safety (use trash instead of rm)
+# Interactive safety
 alias rm='trash'
 alias cp='cp -i'
 alias mv='mv -i'
@@ -114,6 +130,9 @@ alias mv='mv -i'
 # Quick edit
 alias zshrc='${EDITOR:-code} ~/.zshrc'
 alias reload='source ~/.zshrc'
+alias tm='tmuxinator'
+alias nrd='npm run dev'
+alias ni='npm install'
 
 # =============================================================================
 # Zsh Plugins (via Homebrew)
@@ -142,4 +161,8 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 # =============================================================================
 if [[ -f ~/.zshrc.local ]]; then
     source ~/.zshrc.local
+fi
+
+if [[ -f "$HOME/.local/bin/env" ]]; then
+    source "$HOME/.local/bin/env"
 fi

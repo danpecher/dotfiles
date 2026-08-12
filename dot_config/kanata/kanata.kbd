@@ -5,61 +5,37 @@
 ;; OVERVIEW:
 ;; This configuration provides ergonomic keyboard enhancements:
 ;;
-;; 1. HOME ROW MODS (Minimal)
+;; 1. HOME ROW MODS
 ;;    - D key: Tap = d, Hold = Hyperkey (Ctrl+Alt+Cmd+Shift)
 ;;    - F key: Tap = f, Hold = Left Shift
 ;;    - J key: Tap = j, Hold = Left Shift
-;;    - Only F/J activate when opposite hand keys are pressed (prevents accidental triggers)
+;;    - F/J only activate when opposite-hand keys are pressed
 ;;
-;; 2. SYMBOL LAYER (Space-based)
+;; 2. SYMBOL LAYER
 ;;    - Hold Space to access symbols on home row and nearby keys
-;;    - h=:, u==, i=_, o=-, j={, k=(, l=), ;=}, n=^, m=?, .=$, comma=;
 ;;    - Tap Space = normal space
 ;;
-;; 3. NUMBER LAYER (G-based)
-;;    - Hold G to access numbers on right hand (mirrors standard numpad)
-;;    - Numbers: u=7, i=8, o=9, j=4, k=5, l=6, m=1, ,=2, .=3, /=0
-;;    - H key = Backspace (easy error correction while entering numbers)
-;;    - Ergonomic number pad without leaving home position
-;;    - Tap G = normal g
+;; 3. NUMBER LAYER
+;;    - Hold G to access numbers on right hand
+;;    - H = Backspace while number layer is active
 ;;
-;; 4. HOME ROW ENTER (Symbol Layer Only)
-;;    - Semicolon key = Enter when symbol layer is active (hold Space)
-;;    - Keeps hands on home row for enter key while typing symbols
-;;    - On base layer, semicolon works normally
-;;    - More ergonomic than reaching for enter key
+;; 4. NAVIGATION LAYER
+;;    - Hold Left Shift for Vim-style navigation on the right hand
+;;    - Tap Left Shift = Cmd+Tab
 ;;
-;; 5. CAPSLOCK MODIFIER
-;;    - Capslock key: Tap = hyperkey+t, Hold = Left Command
-;;    - Tap: Sends Ctrl+Alt+Cmd+Shift+t (global shortcut)
-;;    - Hold: Acts as Command key for shortcuts
-;;    - Makes Command key easily accessible without moving hands
+;; 5. CAPSLOCK
+;;    - Capslock sends Escape
 ;;
-;; 6. HYPERKEYS
-;;    - D key: Tap = d, Hold = Hyperkey (left hand, easy to reach)
-;;    - Tab key: Tap = tab, Hold = Ctrl (thumb access)
-;;    - Hyperkey = Ctrl+Alt+Cmd+Shift simultaneously
-;;    - Perfect for global shortcuts that won't conflict with apps
+;; 6. RIGHT SHIFT
+;;    - Tap Right Shift = Option+Tab
+;;    - Hold Right Shift = Right Control
 ;;
-;; 7. RIGHT CONTROL ACCESS
-;;    - Right Shift key = Right Control
-;;    - Provides easy access to right control without moving hands
-;;    - Left shift disabled - use F/J home row mods for shift instead
-;;
-;; 8. COMBO KEYS
-;;    - J+K together = Escape (Vim-style, great for modal editing)
-;;    - Activates when both keys pressed within 50ms
+;; 7. COMBO KEYS
+;;    - J+K together = Escape
 ;;
 ;; TIMING:
-;; - Tap time: 150ms (max time for a tap before hold is considered)
-;; - Hold time: 200ms (min time to trigger hold action)
-;; - Shorter tap-time ensures quick taps are registered immediately
-;; - Longer hold-time prevents accidental holds during normal typing
-;;
-;; ANTI-REPEAT MECHANISM:
-;; - Uses a clever "tap" alias that briefly switches to nomods layer
-;; - Prevents accidental modifier activation during fast typing
-;; - Returns to base layer after 20ms of idle time
+;; - Tap time: 150ms
+;; - Hold time: 200ms
 ;;
 ;; ============================================================================
 
@@ -68,14 +44,16 @@
 )
 
 (defsrc
+  f1  f2  f3  f4  f5  f6  f7  f8  f9  f10 f11 f12
   1   2   3   4   5   6   7   8   9   0   -   =
   tab
   q   w   e   r   t   y   u   i   o   p   [   ]
-  a   s   d   f   g   h   j   k   l   ;   '
+  a   s   d   f   g   h   j   k   l   ;   '   \
   z   x   c   v   b   n   m   ,   .   /
   lshift rshift
   spc
   caps
+  ret
 )
 
 ;; Chords: J+K together = Escape (Vim-style)
@@ -87,19 +65,17 @@
 )
 
 (defvar
-  ;; Timing for tap-hold behavior
-  ;; tap-time: if another key is pressed within this time, register as tap
-  ;; hold-time: minimum time before hold action activates
   tap-time 150
   hold-time 200
 
-  ;; Used for tap-hold-release-keys to only trigger mods with opposite hand
   left-hand-keys (
+    1 2 3 4 5
     q w e r t
     a s d f g
     z x c v b
   )
   right-hand-keys (
+    6 7 8 9 0
     y u i o p
     h j k l ;
     n m , . /
@@ -110,32 +86,30 @@
 ;; LAYERS
 ;; ============================================================================
 
-;; Base layer: Home row mods on F/J, symbol layer on Space, hyperkey on Tab
-;; Number row enabled (1-0), semicolon works normally
-;; Some symbol keys disabled to force use of symbol layer
-;; But ', ", -, = work on their regular positions
-;; Left shift disabled, right shift = right control - use F/J home row mods for shift
 (deflayer base
+  brdn brup f3  f4  f5  f6  prev pp  next mute vold volu
   1   2   3   4   5   6   7   8   9   0   -   =
   @tab
-  q   w   e   r   t   y   u   i   o   p   XX  XX
-  @a  @s  @d  @f  @g  h   @cj @ck @l  ;   '
+  q   w   e   r   t   y   u   i   o   p   [   ]
+  a   s   @d  @f  @g  h   @cj @ck l   ;   '   \
   z   x   c   v   b   n   m   ,   .   /
-  XX  rctrl
+  @lnav  @rghostty
   @spc
   @caps
+  ret
 )
 
-;; Nomods layer: Temporarily disables all mods (anti-repeat mechanism)
 (deflayer nomods
-  XX  XX  XX  XX  XX  XX  XX  XX  XX  XX  -   =
+  _   _   _   _   _   _   _   _   _   _   _   _
+  _   _   _   _   _   _   _   _   _   _   -   =
   tab
-  q   w   e   r   t   y   u   i   o   p   XX  XX
-  a   s   d   f   g   h   j   k   l   ;   '
+  q   w   e   r   t   y   u   i   o   p   [   ]
+  a   s   d   f   g   h   j   k   l   ;   '   \
   z   x   c   v   b   n   m   ,   .   /
-  XX  rctrl
+  lctrl  rctrl
   spc
   caps
+  ret
 )
 
 ;; Symbol layer: Activated while Space is held
@@ -143,56 +117,53 @@
 ;;
 ;;     ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬────┐
 ;;     │ Q  │ W  │ E  │ R  │ T  │ Y  │ U  │ I  │ O  │ P  │
-;;     │    │    │ !  │ #  │ ~  │    │ [  │ ]  │ *  │ %  │
+;;     │ <  │ >  │ !  │ #  │ ~  │ |  │ [  │ ]  │ *  │ %  │
 ;;     ├────┼────┼────┼────┼────┼────┼────┼────┼────┼────┤
 ;;     │ A  │ S  │ D  │ F  │ G  │ H  │ J  │ K  │ L  │ ;  │
-;;     │ @  │ {  │ +  │ /  │ \  │ :  │ (  │ )  │ }  │ ⏎  │  ← HOME ROW (Enter)
+;;     │ @  │ {  │ +  │ /  │ \  │ =  │ (  │ )  │ }  │ ;  │
 ;;     ├────┼────┼────┼────┼────┼────┼────┼────┼────┼────┤
 ;;     │ Z  │ X  │ C  │ V  │ B  │ N  │ M  │ ,  │ .  │ /  │
-;;     │    │    │    │ ^  │ &  │    │ $  │ <  │ >  │    │
+;;     │ _  │    │    │ ^  │ &  │ `  │ $  │ :  │    │    │
 ;;     └────┴────┴────┴────┴────┴────┴────┴────┴────┴────┘
 ;;                      Hold [SPACE] to activate
-;;
-;; Key placements:
-;; HOME ROW (most frequent): @ + _ / \ : { ( ) }
-;; TOP ROW (operators):      ! = ~ [ ] * %
-;; BOTTOM ROW (less common): & ^ $ ? ; 
-;; Note: -, ", ', < removed - use their standard keyboard positions
-;;
 
 (deflayer symbols
   _   _   _   _   _   _   _   _   _   _   _   _
+  _   _   _   _   _   _   _   _   _   _   _   _
   _
-  _    _    S-1    S-3    S-grv    _    [    ]    S-8    S-5    _   _
-  S-2    S-[    S-=    /    \    _    S-9    S-0    S-]    ret    _
-  _    _    _    S-6    S-7    _    S-4    S-,    S-.    _
-  _    rctrl
+  S-,    S-.    S-1    S-3    S-grv    S-\    [    ]    S-8    S-5    _   _
+  S-2    S-[    S-=    /    \    =    S-9    S-0    S-]    ;    _    _
+  S--    _    _    S-6    S-7    grv    S-4    S-;    _    _
+  lctrl  rctrl
+  _
   _
   _
 )
 
 ;; Number layer: Activated while G is held
-;; Numbers on right hand home position for easy access
-;;
-;;     ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬────┐
-;;     │ Q  │ W  │ E  │ R  │ T  │ Y  │ U  │ I  │ O  │ P  │
-;;     │    │    │    │    │    │    │ 7  │ 8  │ 9  │    │
-;;     ├────┼────┼────┼────┼────┼────┼────┼────┼────┼────┤
-;;     │ A  │ S  │ D  │ F  │ G  │ H  │ J  │ K  │ L  │ ;  │
-;;     │    │    │    │    │ ▼  │ ←  │ 4  │ 5  │ 6  │    │  ← HOME ROW
-;;     ├────┼────┼────┼────┼────┼────┼────┼────┼────┼────┤
-;;     │ Z  │ X  │ C  │ V  │ B  │ N  │ M  │ ,  │ .  │ /  │
-;;     │    │    │    │    │    │    │ 1  │ 2  │ 3  │ 0  │
-;;     └────┴────┴────┴────┴────┴────┴────┴────┴────�────┘
-;;                      Hold [G] to activate
-;;
 (deflayer numbers
+  _   _   _   _   _   _   _   _   _   _   _   _
   _   _   _   _   _   _   _   _   _   _   _   _
   _
   _    _    _    _    _    _    7    8    9    _    _   _
-  _    _    _    _    _    bspc 4    5    6    _    _
+  _    _    _    _    _    bspc 4    5    6    _    _    _
   _    _    _    _    _    _    1    2    3    0
   _    _
+  _
+  _
+  _
+)
+
+;; Navigation layer: Activated while Left Shift is held
+(deflayer navigation
+  _   _   _   _   _   _   _   _   _   _   _   _
+  _   _   _   _   _   _   _   _   _   _   _   _
+  _
+  _    _    _    _    _    _    pgup    _    _    _    _   _
+  home    _    _    end    _    left    down    up    right    _    _    _
+  _    _    _    _    _    _    pgdn    _    _    _
+  _    _
+  _
   _
   _
 )
@@ -206,8 +177,16 @@
 )
 
 ;; ============================================================================
-;; ALIASES
+;; ALIASES / OVERRIDES
 ;; ============================================================================
+
+;; Hyper+comma/period → F13/F16 for AeroSpace layout switching
+(defoverrides
+  (lctl lalt lmet lsft ,) (f13)
+  (lctl lalt lmet lsft .) (f16)
+  (lalt f17) (f17)
+  (lctl lalt lmet lsft f17) (f17)
+)
 
 (defalias
   ;; Anti-repeat mechanism: briefly switch to nomods, then return to base
@@ -216,24 +195,15 @@
     (on-idle-fakekey to-base tap 20)
   )
 
-  ;; Home row mods (only F and J)
+  ;; Home row mods
   f (tap-hold-release-keys $tap-time $hold-time (multi f @tap) lsft $left-hand-keys)
-  
-  ;; J and K - used in chord, but also work individually
-  ;; These are referenced by the defchords above
   j (tap-hold-release-keys $tap-time $hold-time (multi j @tap) lsft $right-hand-keys)
   k (multi k @tap)
-  
+
   ;; Chord aliases for J and K
   cj (chord combo j)
   ck (chord combo k)
 
-  ;; Normal keys with anti-repeat mechanism
-  a (multi a @tap)
-  s (multi s @tap)
-  l (multi l @tap)
-  ;; Semicolon key = normal semicolon on base layer, Enter on symbol layer
-  
   ;; G key: tap = g, hold = number layer
   g (tap-hold-release $tap-time $hold-time (multi g @tap) (layer-while-held numbers))
 
@@ -241,15 +211,17 @@
   d (tap-hold-release $tap-time $hold-time (multi d @tap) (multi lctl lalt lmet lsft))
 
   ;; Space: tap = space, hold = symbol layer
-  ;; Using tap-hold-release for better responsiveness
-  ;; Longer hold-time (300ms) allows quick space taps without triggering symbol layer
   spc (tap-hold-release $tap-time 250 spc (layer-while-held symbols))
 
   ;; Tab: tap = tab, hold = Ctrl
-  ;; Using tap-hold-release for immediate feedback
   tab (tap-hold-release $tap-time $hold-time tab lctl)
 
-  ;; Capslock: tap = hyperkey+t, hold = Left Command
-  ;; Using tap-hold-release for immediate feedback
-  caps (tap-hold-release $tap-time $hold-time (multi lctl lalt lmet lsft t) lmet)
+  ;; Capslock: tap = escape
+  caps esc
+
+  ;; Right Shift: tap = Option+Tab, hold = Right Ctrl
+  rghostty (tap-hold-release $tap-time $hold-time M-tab rctrl)
+
+  ;; Left Shift: tap = Cmd+Tab, hold = navigation layer
+  lnav (tap-hold-release $tap-time $hold-time M-tab (layer-while-held navigation))
 )

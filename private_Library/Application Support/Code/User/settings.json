@@ -1,0 +1,166 @@
+{
+    "workbench.startupEditor": "none",
+    "telemetry.editStats.enabled": false,
+    "telemetry.feedback.enabled": false,
+    "telemetry.telemetryLevel": "off",
+    "gitlens.telemetry.enabled": false,
+    "workbench.settings.showAISearchToggle": false,
+    "gitlens.ai.enabled": false,
+    "workbench.commandPalette.showAskInChat": false,
+    "chat.agent.codeBlockProgress": false,
+    "chat.commandCenter.enabled": false,
+    "git.autofetch": true,
+    "security.workspace.trust.untrustedFiles": "open",
+    "gitlens.graph.layout": "editor",
+    "claudeCode.selectedModel": "default",
+    "gitTreeCompare.showCheckboxes": false,
+    "gitTreeCompare.diffMode": "merge",
+    "extensions.experimental.affinity": {
+        "asvetliakov.vscode-neovim": 1
+    },
+    "window.commandCenter": false,
+    "nvimDashboard.openOnNoTabs": true,
+    "nvimDashboard.logoText": "                                                                         \n                                                                         \n▄▄ ▄▄ ▄▄ ▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄▄ ▄▄▄▄▄ ▄▄    ▄▄     ▄▄▄  ▄▄   ▄▄  ▄▄▄▄       \n██▄██ ██ ██▄██ ██▄▄    ██▄▄  ██▄▄  ██    ██    ██▀██ ██ ▄ ██ ███▄▄       \n ▀█▀  ██ ██▄█▀ ██▄▄▄   ██    ██▄▄▄ ██▄▄▄ ██▄▄▄ ▀███▀  ▀█▀█▀  ▄▄██▀  ▄    \n                                                                   ▀     \n                                                                         \n                                                                         \n                        ▄▄ ▄▄  ▄▄  ▄▄▄▄                                  \n                        ██ ███▄██ ██▀▀▀                                  \n                        ██ ██ ▀██ ▀████ ▄",
+    "nvimDashboard.fontSize": 11,
+    "nvimDashboard.maxRecentFiles": 0,
+    "nvimDashboard.showDateTime": false,
+    "zenMode.fullScreen": false,
+    "editor.fontFamily": "jetbrainsmono nerd font mono",
+    "python.analysis.typeCheckingMode": "standard",
+    "roo-cline.debug": false,
+    "roo-cline.allowedCommands": [
+        "git log",
+        "git diff",
+        "git show"
+    ],
+    "roo-cline.deniedCommands": [],
+    "github.copilot.chat.organizationCustomAgents.enabled": false,
+    "window.autoDetectColorScheme": true,
+    "scm.countBadge": "off",
+    "claudeCode.preferredLocation": "panel",
+    "chat.tools.urls.autoApprove": {
+        "https://code.visualstudio.com": true,
+        "https://github.com/microsoft/vscode/wiki/*": true,
+        "https://www.hammerspoon.org": {
+            "approveRequest": false,
+            "approveResponse": true
+        },
+        "https://www.mta.info": true,
+        "https://github.com": {
+            "approveRequest": false,
+            "approveResponse": true
+        }
+    },
+    "diffEditor.renderSideBySide": true,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "claudeCode.respectGitIgnore": false,
+    "explorer.excludeGitIgnore": true,
+    "diffEditor.hideUnchangedRegions.contextLineCount": 5,
+    "diffEditor.renderIndicators": false,
+    "python.terminal.activateEnvironment": false,
+    "copilotUsageTracker.viewStyle": "text",
+    "copilotUsageTracker.usageReference": "total",
+    "search.useIgnoreFiles": false,
+    "gitlens.codeLens.enabled": false,
+    "gitlens.statusBar.enabled": false,
+    "gitlens.showWelcomeOnInstall": false,
+    "gitlens.showWhatsNewAfterUpgrades": false,
+    "[swift]": {
+        "editor.defaultFormatter": "swiftlang.swift-vscode"
+    },
+    "github.copilot.nextEditSuggestions.eagerness": "low",
+    "github.copilot.nextEditSuggestions.enabled": false,
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
+    },
+    "chat.tools.terminal.autoApprove": {
+        "cargo check": true,
+        "cargo clippy": true,
+        "cargo run": true,
+        "cargo doc": true,
+        "uv": true
+    },
+    "lldb.suppressUpdateNotifications": true,
+    "chat.viewSessions.orientation": "stacked",
+    "workbench.editorAssociations": {
+        "*.copilotmd": "vscode.markdown.preview.editor",
+        "*.parquet": "duckdb.dataFileViewer",
+        "*.csv": "duckdb.dataFileViewer",
+        "*.tsv": "duckdb.dataFileViewer",
+        "*.xlsx": "duckdb.dataFileViewer"
+    },
+    "intellij.additionalJvmArgs": [
+        "-opt-in=kotlin.uuid.ExperimentalUuidApi",
+        "-opt-in=kotlin.time.ExperimentalTime"
+    ],
+    "intellij.dev.logLaunch": true,
+    "intellij.buildTool": "gradle",
+    "intellij.jdkForSymbolResolution": "/Users/dan/.local/share/mise/installs/java/21.0.2",
+    "intellij.trace.server": "messages",
+    "workbench.preferredDarkColorTheme": "Catppuccin Frappé",
+    "workbench.iconTheme": "vscode-icons",
+    "diffEditor.experimental.showMoves": true,
+    "gitlens.views.searchAndCompare.files.layout": "list",
+    "githubPullRequests.pullBranch": "never",
+    "editor.minimap.showSlider": "always",
+    "editor.unicodeHighlight.allowedCharacters": {
+        "’": true
+    },
+    "git.detectWorktrees": true,
+    "githubPullRequests.fileListLayout": "tree",
+    "diffEditor.maxComputationTime": 0,
+    "githubPullRequests.hideViewedFiles": true,
+    "swift.disableSwiftlyInstallPrompt": true,
+    "explorer.confirmDragAndDrop": false,
+    "terminal.integrated.initialHint": false,
+    "chat.titleBar.openInAgentsWindow.enabled": false,
+    "gitlens.views.stashes.files.layout": "list",
+    "githubPullRequests.queries": [
+
+        // {
+        //     "label": "Copilot on My Behalf",
+        //     "query": "repo:${owner}/${repository} is:open author:copilot assignee:${user}"
+        // },
+        // {
+        //     "label": "Local Pull Request Branches",
+        //     "query": "default"
+        // },
+        // {
+        //     "label": "Waiting For My Review",
+        //     "query": "repo:${owner}/${repository} is:open review-requested:${user}"
+        // },
+        {
+            "label": "Created By Me",
+            "query": "repo:${owner}/${repository} is:open author:${user}"
+        },
+        // {
+        //     "label": "All Open",
+        //     "query": "default"
+        // }
+    ],
+    "chat.disableAIFeatures": true,
+    "editor.foldingImportsByDefault": true,
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.lineHeight": 1.6,
+    "js/ts.inlayHints.variableTypes.enabled": true,
+    "js/ts.inlayHints.propertyDeclarationTypes.enabled": true,
+    "js/ts.inlayHints.parameterTypes.enabled": true,
+    "zenMode.centerLayout": false,
+    "editor.detectIndentation": false,
+    "workbench.activityBar.location": "top",
+    "intellij.region": "europe",
+    "intellij.dataSharing": "none",
+    "workbench.preferredLightColorTheme": "Light+",
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[sql]": {
+        "editor.defaultFormatter": "adpyke.vscode-sql-formatter"
+    },
+    "diffEditor.hideUnchangedRegions.enabled": true
+}

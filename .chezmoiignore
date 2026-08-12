@@ -1,0 +1,11 @@
+# Repository documentation and helpers belong in the source tree only.
+README.md
+Makefile
+Brewfile
+Brewfile.*
+docs
+docs/**
+state
+state/**
+scripts
+scripts/**

@@ -1,10 +1,12 @@
-# Brewfile - macOS Setup
-# Run: brew bundle --file=Brewfile
+# Useful, intentionally bounded macOS baseline managed by chezmoi.
+# Install: brew bundle --file=Brewfile
+# Audit:   brew bundle cleanup --file=Brewfile
 
 # =============================================================================
 # Taps
 # =============================================================================
 tap "nikitabobko/tap"
+tap "jetbrains/utils"
 
 # =============================================================================
 # Version & Config Management
@@ -16,15 +18,27 @@ brew "chezmoi"           # Dotfiles manager
 # CLI Essentials
 # =============================================================================
 brew "git"
+brew "git-lfs"           # Git Large File Storage
 brew "gh"                # GitHub CLI
-brew "wget"
-brew "curl"
+brew "btop"              # Process monitor
+brew "cmake"             # Cross-platform build system
+brew "curl"              # Current curl independent of macOS
+brew "diff-so-fancy"     # Readable chezmoi diffs
+brew "glow"              # Markdown viewer
+brew "hey"               # HTTP load generator
+brew "beads"             # Local issue tracking for agent-assisted work
 brew "jq"                # JSON processing
 brew "yq"                # YAML processing
-brew "aria2"             # Download manager
-brew "gnupg"             # GPG encryption
-brew "tmux"              # Terminal multiplexer
 brew "mas"               # Mac App Store CLI
+brew "kanata"            # Keyboard remapping
+brew "mcfly"             # Searchable shell history
+brew "mosh"              # Resilient remote shell
+brew "navi"              # Interactive command cheatsheets
+brew "tmuxinator"        # tmux session manager
+brew "tree"              # Directory tree
+brew "wget"              # File downloader
+brew "xh"                # Friendly HTTP client
+brew "yazi"              # Terminal file manager
 
 # =============================================================================
 # Modern CLI Replacements
@@ -35,17 +49,7 @@ brew "fzf"               # Fuzzy finder
 brew "bat"               # Better cat
 brew "eza"               # Better ls
 brew "zoxide"            # Smarter cd
-brew "duf"               # Better df (disk usage)
-brew "dust"              # Better du (directory sizes)
-brew "tree"              # Directory tree
-brew "htop"              # Better top
 brew "trash"             # Move to trash instead of rm
-brew "xh"                # Better curl for APIs
-brew "mcfly"             # Better shell history
-brew "navi"              # Interactive cheatsheet
-brew "glow"              # Markdown viewer
-brew "yazi"              # Terminal file manager
-brew "kanata"
 
 # =============================================================================
 # Shell & Terminal
@@ -58,53 +62,96 @@ brew "starship"          # Cross-shell prompt
 # Development Tools
 # =============================================================================
 brew "neovim"            # Modern vim
+brew "rust"              # Rust toolchain
 brew "lazygit"           # Terminal UI for git
 brew "git-delta"         # Better git diffs
-brew "diff-so-fancy"     # Better diff output (used by chezmoi)
+brew "jetbrains/utils/kotlin-lsp"
+brew "xcode-build-server"
 brew "xcodes"            # Xcode version manager
+brew "cocoapods"         # iOS dependency manager
+brew "flyctl"
+brew "render"            # Render CLI
 
 # =============================================================================
 # Applications (Casks)
 # =============================================================================
-
-# Terminals
+cask "zen"
 cask "ghostty"
 
 # Development
 cask "visual-studio-code"
+cask "android-studio"
+cask "fork"
 cask "orbstack"          # Docker alternative
-cask "rapidapi"          # API testing
 cask "tableplus"         # Database GUI
-cask "insomnia"          # API client
+cask "rapidapi"          # API client
+cask "zed@preview"       # Editor used by the Claude shortcut
 
 # Productivity
 cask "raycast"           # Spotlight replacement
 cask "notion"
+cask "figma"
+cask "obsidian"
 
-# Utilities
-cask "nikitabobko/tap/aerospace"  # Tiling window manager
+# Utilities. The local cask points at the customized build in ~/Code/AeroSpace.
+cask "nikitabobko/local-tap/aerospace-dev"
+cask "hammerspoon"
+cask "mitmproxy"
+cask "ngrok"
+cask "proxyman"
+cask "rectangle"
+cask "ubersicht"         # Runs simple-bar for the AeroSpace workspace display
 cask "monitorcontrol"    # External monitor brightness
 
 # AI
 cask "claude-code"
+cask "codex"
 
 # =============================================================================
 # Fonts
 # =============================================================================
-cask "font-fira-code-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
-cask "font-iosevka-nerd-font"
-cask "font-symbols-only-nerd-font"
+cask "font-fira-code-nerd-font"
 
 # =============================================================================
 # VS Code Extensions
 # =============================================================================
-vscode "vscodevim.vim"
-vscode "eamodio.gitlens"
-vscode "bbenoist.nix"
+vscode "openai.chatgpt"
 vscode "anthropic.claude-code"
+vscode "asvetliakov.vscode-neovim"
+vscode "avetis.tokyo-night"
+vscode "bierner.markdown-mermaid"
+vscode "catppuccin.catppuccin-vsc"
+vscode "charliermarsh.ruff"
+vscode "dbaeumer.vscode-eslint"
+vscode "esbenp.prettier-vscode"
+vscode "github.vscode-pull-request-github"
+vscode "github.github-vscode-theme"
+vscode "golang.go"
+vscode "howardzuo.vscode-favorites"
+vscode "jetbrains.kotlin-server"
+vscode "llvm-vs-code-extensions.lldb-dap"  # Swift extension dependency
+vscode "ms-python.debugpy"                 # Python extension dependency
+vscode "ms-python.python"
+vscode "ms-python.vscode-pylance"
+vscode "ms-python.vscode-python-envs"      # Python extension dependency
+vscode "ms-vscode-remote.remote-containers"
+vscode "maattdd.gitless"
+vscode "martinortiz.codex-stats"
+vscode "ms-pyright.pyright"
+vscode "ms-vscode.makefile-tools"
+vscode "patbenatar.advanced-new-file"
+vscode "redhat.vscode-yaml"
+vscode "rust-lang.rust-analyzer"
+vscode "swiftlang.swift-vscode"
+vscode "teabyii.ayu"
+vscode "tompollak.lazygit-vscode"
+vscode "vadimcn.vscode-lldb"
+vscode "vscode-icons-team.vscode-icons"
+vscode "wayou.file-icons-mac"
 
 # =============================================================================
 # Mac App Store Apps (requires `mas` and being signed into App Store)
 # =============================================================================
 mas "Numbers", id: 409203825
+mas "uBlock Origin Lite", id: 6745342698
