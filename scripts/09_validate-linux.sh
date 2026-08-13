@@ -61,7 +61,17 @@ fi
 # present. Removing it inside this disposable container permits parser-only use.
 setcap -r /usr/bin/sway 2>/dev/null || true
 install -d -m 0700 /tmp/runtime
-XDG_RUNTIME_DIR=/tmp/runtime WLR_BACKENDS=headless WLR_RENDERER=pixman \
-    sway --validate -c /src/dot_config/sway/config
+sway_output=""
+if ! sway_output="$(
+    XDG_RUNTIME_DIR=/tmp/runtime WLR_BACKENDS=headless WLR_RENDERER=pixman \
+        sway --validate -c /src/dot_config/sway/config 2>&1
+)"; then
+    printf '%s\n' "$sway_output" >&2
+    exit 1
+fi
+if printf '%s\n' "$sway_output" | grep -q 'Overwriting binding'; then
+    printf '%s\n' "$sway_output" >&2
+    exit 1
+fi
 printf 'Linux rendering and Sway validation passed\n'
 LINUX_VALIDATION

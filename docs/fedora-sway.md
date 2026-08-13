@@ -14,7 +14,7 @@ normally unnecessary.
 - `Super+Shift+H/J/K/L` or arrow keys: move a window
 - `Super+1` through `Super+0`: switch workspace
 - `Super+Shift+1` through `Super+Shift+0`: move a window to a workspace
-- `Super+Shift+L`: lock
+- `Super+Ctrl+L`: lock
 - `Super+Shift+Q`: close the focused window
 - `Super+R`: resize mode
 - `Print`: capture the current output
