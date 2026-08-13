@@ -61,8 +61,9 @@ comm -12 \
     fi
 grep -q '^ExecStart=/usr/local/bin/kanata --cfg {{HOME}}/.config/kanata/kanata.kbd$' \
     "$DOTFILES_DIR/systemd/kanata.service.tmpl"
-grep -q 'Skipping Kanata installation (SKIP_KANATA=1)' "$SCRIPT_DIR/02_setup.sh"
-grep -q 'skipped (SKIP_KANATA=1)' "$SCRIPT_DIR/04_audit.sh"
+grep -q 'Skipping Kanata installation (SKIP_STEPS includes kanata)' "$SCRIPT_DIR/02_setup.sh"
+grep -q 'Skipping GitHub authentication (SKIP_STEPS includes github)' "$SCRIPT_DIR/02_setup.sh"
+grep -q 'skipped (SKIP_STEPS includes kanata)' "$SCRIPT_DIR/04_audit.sh"
 
 if command -v kanata >/dev/null 2>&1; then
     kanata --check -c "$DOTFILES_DIR/dot_config/kanata/kanata.kbd" >/dev/null
@@ -71,6 +72,11 @@ fi
 tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-validate.XXXXXX")"
 trap 'rm -rf "$tmp_dir"' EXIT
 mkdir -p "$tmp_dir/home"
+
+SKIP_STEPS='github, kanata' bash -c '
+    source "$1"
+    skip_step github && skip_step kanata && ! skip_step nonexistent
+' validate-skip-steps "$SCRIPT_DIR/lib.sh"
 
 defaults_home="$tmp_dir/defaults-home"
 mkdir -p "$defaults_home"
@@ -93,11 +99,20 @@ for profile in personal minimal; do
         printf 'name = "Validation User"\n'
         printf 'email = "validation@example.invalid"\n'
         printf 'github_username = ""\n'
+        printf 'github_auth = true\n'
         printf 'profile = "%s"\n' "$profile"
     } > "$config"
     PROFILE="$profile" chezmoi --config "$config" --source "$DOTFILES_DIR" \
         --destination "$tmp_dir/home" apply --dry-run >/dev/null
 done
+
+githubless_init="$tmp_dir/init-githubless.toml"
+PROFILE=personal SKIP_STEPS=github \
+    chezmoi --persistent-state "$tmp_dir/init-githubless.boltdb" \
+    init --source "$DOTFILES_DIR" --config-path "$githubless_init" \
+    --destination "$tmp_dir/home" --no-tty --promptDefaults
+grep -q '^    github_auth = false$' "$githubless_init"
+grep -q '^    github_username = ""$' "$githubless_init"
 
 for profile in personal minimal; do
     rendered_zshrc="$tmp_dir/zshrc-$profile"
@@ -141,6 +156,16 @@ rendered_gitconfig="$tmp_dir/gitconfig"
 PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
     execute-template < "$DOTFILES_DIR/dot_gitconfig.tmpl" > "$rendered_gitconfig"
 git config --file "$rendered_gitconfig" --list >/dev/null
+
+githubless_config="$tmp_dir/githubless.toml"
+sed 's/github_auth = true/github_auth = false/' "$tmp_dir/personal.toml" > "$githubless_config"
+githubless_gitconfig="$tmp_dir/gitconfig-githubless"
+PROFILE=personal chezmoi --config "$githubless_config" --source "$DOTFILES_DIR" \
+    execute-template < "$DOTFILES_DIR/dot_gitconfig.tmpl" > "$githubless_gitconfig"
+if git config --file "$githubless_gitconfig" --get-regexp '^url\..*\.insteadof$' >/dev/null; then
+    printf 'GitHub-less config unexpectedly rewrites HTTPS URLs to SSH\n' >&2
+    exit 1
+fi
 
 rendered_claude_settings="$tmp_dir/claude-settings.json"
 PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \

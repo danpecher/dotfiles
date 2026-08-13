@@ -17,7 +17,8 @@ help:
 	  'make macos-defaults    Explicitly apply managed macOS preferences' \
 	  'make cleanup-preview   Preview undeclared Homebrew packages' \
 	  '' \
-	  'PROFILE=personal is the default. PROFILE=minimal omits personal desktop integrations.'
+	  'PROFILE=personal is the default. PROFILE=minimal omits personal desktop integrations.' \
+	  'SKIP_STEPS=github,kanata omits selected optional bootstrap/setup steps.'
 
 plan:
 	@PROFILE="$(PROFILE)" ./scripts/05_plan.sh

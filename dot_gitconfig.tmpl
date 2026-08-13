@@ -81,8 +81,10 @@
     helper = osxkeychain
 {{ end -}}
 
+{{ if ne (toString (get . "github_auth")) "false" -}}
 [url "git@github.com:"]
     insteadOf = https://github.com/
+{{ end -}}
 
 {{ if .github_username -}}
 [github]

@@ -2,8 +2,8 @@
 
 The supported Linux target is Fedora Sway Spin or Fedora Workstation with the
 personal profile's Sway package set. The current pinned Kanata release archive
-targets x86_64 Linux. On an ARM64 VM, use `SKIP_KANATA=1` with the bootstrap;
-the VM receives keyboard input after host-side remapping, so a guest remapper is
+targets x86_64 Linux. On an ARM64 VM, include `kanata` in `SKIP_STEPS`; the VM
+receives keyboard input after host-side remapping, so a guest remapper is
 normally unnecessary.
 
 ## Session basics

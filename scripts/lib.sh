@@ -5,7 +5,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 PROFILE="${PROFILE:-personal}"
-SKIP_KANATA="${SKIP_KANATA:-0}"
+SKIP_STEPS="${SKIP_STEPS:-}"
+if [[ "${SKIP_KANATA:-0}" == 1 ]]; then
+    SKIP_STEPS="${SKIP_STEPS:+$SKIP_STEPS,}kanata"
+fi
 OS="$(uname -s)"
 
 export HOMEBREW_NO_ANALYTICS=1
@@ -15,6 +18,13 @@ info() { printf '[INFO] %s\n' "$*"; }
 warn() { printf '[WARN] %s\n' "$*" >&2; }
 fail() { printf '[FAIL] %s\n' "$*" >&2; }
 section() { printf '\n%s\n' "$*"; }
+
+skip_step() {
+    case ",${SKIP_STEPS// /,}," in
+        *,"$1",*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
 
 brewfile_for_profile() {
     case "$PROFILE" in

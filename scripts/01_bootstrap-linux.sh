@@ -14,7 +14,10 @@ DOTFILES_REPO="danpecher/dotfiles"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/Code/dotfiles}"
 DOTFILES_REF="${DOTFILES_REF:-master}"
 PROFILE="${PROFILE:-personal}"
-SKIP_KANATA="${SKIP_KANATA:-0}"
+SKIP_STEPS="${SKIP_STEPS:-}"
+if [[ "${SKIP_KANATA:-0}" == 1 ]]; then
+    SKIP_STEPS="${SKIP_STEPS:+$SKIP_STEPS,}kanata"
+fi
 REPO_ROOT=""
 if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,6 +29,21 @@ info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+
+skip_step() {
+    case ",${SKIP_STEPS// /,}," in
+        *,"$1",*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+dotfiles_repo_url() {
+    if skip_step github; then
+        printf 'https://github.com/%s.git\n' "$DOTFILES_REPO"
+    else
+        printf 'git@github.com:%s.git\n' "$DOTFILES_REPO"
+    fi
+}
 
 [[ "$(uname -s)" == Linux && -f /etc/fedora-release ]] || \
     error "This bootstrap supports Fedora Linux only."
@@ -41,23 +59,27 @@ info "Updating Fedora package metadata and installing bootstrap tools..."
 sudo dnf upgrade --refresh -y
 sudo dnf install -y chezmoi curl gh git openssh-clients
 
-if [[ ! -f "$HOME/.ssh/id_ed25519" ]]; then
-    info "Generating an SSH key for GitHub..."
-    install -d -m 0700 "$HOME/.ssh"
-    read -r -p "Enter your email for SSH key: " ssh_email
-    ssh-keygen -t ed25519 -C "$ssh_email" -f "$HOME/.ssh/id_ed25519"
-fi
+if skip_step github; then
+    warn "Skipping SSH key setup and GitHub authentication"
+else
+    if [[ ! -f "$HOME/.ssh/id_ed25519" ]]; then
+        info "Generating an SSH key for GitHub..."
+        install -d -m 0700 "$HOME/.ssh"
+        read -r -p "Enter your email for SSH key: " ssh_email
+        ssh-keygen -t ed25519 -C "$ssh_email" -f "$HOME/.ssh/id_ed25519"
+    fi
 
-eval "$(ssh-agent -s)" >/dev/null
-ssh-add "$HOME/.ssh/id_ed25519" >/dev/null 2>&1 || true
-if ! gh auth status >/dev/null 2>&1; then
-    info "Authenticating with GitHub..."
-    gh auth login -p ssh -w
-fi
+    eval "$(ssh-agent -s)" >/dev/null
+    ssh-add "$HOME/.ssh/id_ed25519" >/dev/null 2>&1 || true
+    if ! gh auth status >/dev/null 2>&1; then
+        info "Authenticating with GitHub..."
+        gh auth login -p ssh -w
+    fi
 
-key_fingerprint="$(ssh-keygen -lf "$HOME/.ssh/id_ed25519.pub" | awk '{print $2}')"
-if ! gh ssh-key list 2>/dev/null | grep -q "$key_fingerprint"; then
-    gh ssh-key add "$HOME/.ssh/id_ed25519.pub" -t "$(hostname)-$(date +%Y%m%d)"
+    key_fingerprint="$(ssh-keygen -lf "$HOME/.ssh/id_ed25519.pub" | awk '{print $2}')"
+    if ! gh ssh-key list 2>/dev/null | grep -q "$key_fingerprint"; then
+        gh ssh-key add "$HOME/.ssh/id_ed25519.pub" -t "$(hostname)-$(date +%Y%m%d)"
+    fi
 fi
 
 if [[ -n "$REPO_ROOT" ]]; then
@@ -65,14 +87,14 @@ if [[ -n "$REPO_ROOT" ]]; then
     info "Using local checkout: $DOTFILES_DIR"
 elif [[ -d "$DOTFILES_DIR/.git" ]]; then
     info "Updating canonical checkout: $DOTFILES_DIR"
-    git -C "$DOTFILES_DIR" pull --ff-only
+    git -C "$DOTFILES_DIR" pull --ff-only "$(dotfiles_repo_url)" "$DOTFILES_REF"
 else
     info "Cloning canonical checkout to $DOTFILES_DIR..."
     mkdir -p "$(dirname "$DOTFILES_DIR")"
-    git clone --branch "$DOTFILES_REF" "git@github.com:$DOTFILES_REPO.git" "$DOTFILES_DIR"
+    git clone --branch "$DOTFILES_REF" "$(dotfiles_repo_url)" "$DOTFILES_DIR"
 fi
 
-export PROFILE SKIP_KANATA
+export PROFILE SKIP_STEPS
 chezmoi init --source="$DOTFILES_DIR"
 
 echo ""
@@ -87,7 +109,7 @@ if [[ ! "$apply_dotfiles" =~ ^[Yy]$ ]]; then
 fi
 chezmoi --source="$DOTFILES_DIR" apply --interactive
 
-PROFILE="$PROFILE" SKIP_KANATA="$SKIP_KANATA" \
+PROFILE="$PROFILE" SKIP_STEPS="$SKIP_STEPS" \
     "$DOTFILES_DIR/scripts/02_setup.sh" bootstrap
 
 echo ""

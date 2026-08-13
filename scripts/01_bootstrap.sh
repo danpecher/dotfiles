@@ -23,6 +23,10 @@ DOTFILES_REPO="danpecher/dotfiles"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/Code/dotfiles}"
 DOTFILES_REF="${DOTFILES_REF:-master}"
 PROFILE="${PROFILE:-personal}"
+SKIP_STEPS="${SKIP_STEPS:-}"
+if [[ "${SKIP_KANATA:-0}" == 1 ]]; then
+    SKIP_STEPS="${SKIP_STEPS:+$SKIP_STEPS,}kanata"
+fi
 REPO_ROOT=""
 if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -34,7 +38,7 @@ if [[ "$(uname -s)" == Linux ]]; then
     if [[ -n "$REPO_ROOT" && -x "$REPO_ROOT/scripts/01_bootstrap-linux.sh" ]]; then
         exec "$REPO_ROOT/scripts/01_bootstrap-linux.sh"
     fi
-    PROFILE="$PROFILE" DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_REF="$DOTFILES_REF" \
+    PROFILE="$PROFILE" SKIP_STEPS="$SKIP_STEPS" DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_REF="$DOTFILES_REF" \
         /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/$DOTFILES_REPO/$DOTFILES_REF/scripts/01_bootstrap-linux.sh")"
     exit
 fi
@@ -43,6 +47,21 @@ info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+
+skip_step() {
+    case ",${SKIP_STEPS// /,}," in
+        *,"$1",*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+dotfiles_repo_url() {
+    if skip_step github; then
+        printf 'https://github.com/%s.git\n' "$DOTFILES_REPO"
+    else
+        printf 'git@github.com:%s.git\n' "$DOTFILES_REPO"
+    fi
+}
 
 # Check macOS
 if [[ "$(uname)" != "Darwin" ]]; then
@@ -62,6 +81,10 @@ fi
 
 # Generate SSH key early (needed because git config rewrites HTTPS to SSH)
 generate_ssh_key() {
+    if skip_step github; then
+        warn "Skipping SSH key setup (SKIP_STEPS includes github)"
+        return
+    fi
     if [[ ! -f ~/.ssh/id_ed25519 ]]; then
         info "Generating SSH key (needed for GitHub access)..."
         mkdir -p ~/.ssh
@@ -85,6 +108,10 @@ generate_ssh_key() {
 
 # Add SSH key to GitHub using gh CLI
 setup_github_ssh() {
+    if skip_step github; then
+        warn "Skipping GitHub authentication (SKIP_STEPS includes github)"
+        return
+    fi
     if [[ ! -f ~/.ssh/id_ed25519.pub ]]; then
         warn "No SSH key found"
         return
@@ -161,15 +188,15 @@ if is_local_checkout; then
     DOTFILES_DIR="$REPO_ROOT"
 elif [[ -d "$DOTFILES_DIR/.git" ]]; then
     info "Updating canonical checkout: $DOTFILES_DIR"
-    git -C "$DOTFILES_DIR" pull --ff-only
+    git -C "$DOTFILES_DIR" pull --ff-only "$(dotfiles_repo_url)" "$DOTFILES_REF"
 else
     info "Cloning canonical checkout to $DOTFILES_DIR..."
     info "You will be prompted for your name, email, and GitHub username."
     mkdir -p "$(dirname "$DOTFILES_DIR")"
-    git clone --branch "$DOTFILES_REF" "git@github.com:$DOTFILES_REPO.git" "$DOTFILES_DIR"
+    git clone --branch "$DOTFILES_REF" "$(dotfiles_repo_url)" "$DOTFILES_DIR"
 fi
 
-export PROFILE
+export PROFILE SKIP_STEPS
 chezmoi init --source="$DOTFILES_DIR"
 
 echo ""
@@ -192,7 +219,7 @@ SETUP_SCRIPT="$DOTFILES_DIR/scripts/02_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
     info "Running setup script with profile: $PROFILE"
     chmod +x "$SETUP_SCRIPT"
-    PROFILE="$PROFILE" "$SETUP_SCRIPT" bootstrap
+    PROFILE="$PROFILE" SKIP_STEPS="$SKIP_STEPS" "$SETUP_SCRIPT" bootstrap
 else
     warn "Setup script not found at $SETUP_SCRIPT"
 fi

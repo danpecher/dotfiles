@@ -155,9 +155,9 @@ if [[ "$(uname)" == Darwin && ( "$PROFILE" == personal || "$PROFILE" == full ) ]
     fi
 fi
 
-if [[ "$SKIP_KANATA" == 1 && ( "$PROFILE" == personal || "$PROFILE" == full ) ]]; then
+if skip_step kanata && [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
     section "Kanata service"
-    printf 'skipped (SKIP_KANATA=1)\n'
+    printf 'skipped (SKIP_STEPS includes kanata)\n'
 elif [[ "$OS" == Linux && ( "$PROFILE" == personal || "$PROFILE" == full ) ]] && ! command -v kanata >/dev/null 2>&1; then
     section "Kanata service"
     fail "Kanata is not installed"

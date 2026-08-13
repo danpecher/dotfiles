@@ -1,5 +1,7 @@
 {{- $profiles := list "personal" "minimal" -}}
 {{- $profile := env "PROFILE" -}}
+{{- $skipSteps := splitList "," (replace " " "" (env "SKIP_STEPS")) -}}
+{{- $skipGithub := has "github" $skipSteps -}}
 {{- if not (has $profile $profiles) -}}
 {{- $profile = promptChoiceOnce . "profile" "Setup profile" $profiles "personal" -}}
 {{- end -}}
@@ -12,7 +14,8 @@ sourceDir = {{ .chezmoi.sourceDir | quote }}
     profile = {{ $profile | quote }}
     name = "{{ promptStringOnce . "name" "Your full name" }}"
     email = "{{ promptStringOnce . "email" "Your email address" }}"
-    github_username = "{{ promptStringOnce . "github_username" "Your GitHub username" }}"
+    github_auth = {{ not $skipGithub }}
+    github_username = "{{ if not $skipGithub }}{{ promptStringOnce . "github_username" "Your GitHub username" }}{{ end }}"
 
 [git]
     autoCommit = false

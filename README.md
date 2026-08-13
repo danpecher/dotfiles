@@ -77,12 +77,18 @@ clones `master` to `~/Code/dotfiles`, initializes chezmoi from that checkout,
 shows the complete destination diff, and asks before applying. It then
 provisions packages and services. Fedora Sway Spin is the preferred Linux base;
 regular Fedora Workstation is supported by installing the same Sway packages.
-For an ARM64 VM, where host-level keyboard remapping is unnecessary, skip
-Kanata while retaining the full Sway desktop profile:
+Bootstrap steps can be omitted with a comma-separated `SKIP_STEPS` list. The
+supported steps are `github` (SSH-key creation, authentication, key upload, and
+SSH transport) and `kanata` (installation, service setup, and service audit).
+For an ARM64 VM, skip both while retaining the full Sway desktop profile:
 
 ```bash
-SKIP_KANATA=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/master/scripts/01_bootstrap.sh)"
+SKIP_STEPS=github,kanata /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/master/scripts/01_bootstrap.sh)"
 ```
+
+With `github` skipped, the public dotfiles repository is cloned over HTTPS and
+the generated Git config does not rewrite GitHub HTTPS URLs to SSH. To skip
+only interactive GitHub setup, use `SKIP_STEPS=github`.
 
 Use the optional minimal profile with:
 
@@ -102,8 +108,9 @@ only portable CLI/editor state and omits the desktop. See
 [`docs/fedora-sway.md`](docs/fedora-sway.md) for keybindings, monitor setup, and
 service diagnostics.
 
-When Kanata was intentionally omitted, pass `SKIP_KANATA=1` to later package,
-service, and doctor commands as well.
+Pass the same `SKIP_STEPS` value to later package, service, and doctor commands
+when you want those omissions to remain intentional. `SKIP_KANATA=1` remains a
+backward-compatible alias for `SKIP_STEPS=kanata`.
 
 ## Adding changes
 

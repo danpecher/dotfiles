@@ -18,7 +18,10 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 PROFILE="${PROFILE:-${SETUP_PROFILE:-personal}}"
-SKIP_KANATA="${SKIP_KANATA:-0}"
+SKIP_STEPS="${SKIP_STEPS:-}"
+if [[ "${SKIP_KANATA:-0}" == 1 ]]; then
+    SKIP_STEPS="${SKIP_STEPS:+$SKIP_STEPS,}kanata"
+fi
 ACTION="${1:-bootstrap}"
 OS="$(uname -s)"
 
@@ -26,6 +29,13 @@ info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+
+skip_step() {
+    case ",${SKIP_STEPS// /,}," in
+        *,"$1",*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
 
 # Ensure Homebrew is in PATH on macOS. Fedora uses dnf instead.
 if [[ "$OS" == Darwin ]]; then
@@ -49,6 +59,10 @@ echo ""
 
 # Setup SSH key (needed before brew bundle for taps that use git@github.com)
 setup_ssh() {
+    if skip_step github; then
+        warn "Skipping SSH key setup (SKIP_STEPS includes github)"
+        return
+    fi
     if [[ ! -f ~/.ssh/id_ed25519 ]]; then
         info "Generating SSH key..."
         mkdir -p ~/.ssh
@@ -73,6 +87,10 @@ setup_ssh() {
 
 # Add SSH key to GitHub (requires gh CLI from Brewfile)
 setup_github_ssh() {
+    if skip_step github; then
+        warn "Skipping GitHub authentication (SKIP_STEPS includes github)"
+        return
+    fi
     if [[ ! -f ~/.ssh/id_ed25519.pub ]]; then
         warn "No SSH key found, skipping GitHub setup"
         return
@@ -183,8 +201,8 @@ setup_vscode_extensions() {
 
 install_linux_kanata() {
     [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
-    if [[ "$SKIP_KANATA" == 1 ]]; then
-        warn "Skipping Kanata installation (SKIP_KANATA=1)"
+    if skip_step kanata; then
+        warn "Skipping Kanata installation (SKIP_STEPS includes kanata)"
         return
     fi
     local version="1.11.0"
@@ -322,8 +340,8 @@ setup_tmux() {
 # remapper should not process the same keyboard at the same time.
 setup_kanata() {
     [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
-    if [[ "$SKIP_KANATA" == 1 ]]; then
-        warn "Skipping Kanata service setup (SKIP_KANATA=1)"
+    if skip_step kanata; then
+        warn "Skipping Kanata service setup (SKIP_STEPS includes kanata)"
         return
     fi
     command -v kanata >/dev/null 2>&1 || {
