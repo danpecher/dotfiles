@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 PROFILE ?= personal
 
-.PHONY: help plan apply packages services bootstrap doctor snapshot validate macos-defaults cleanup-preview
+.PHONY: help plan apply packages services bootstrap doctor snapshot validate validate-linux macos-defaults cleanup-preview
 
 help:
 	@printf '%s\n' \
@@ -13,10 +13,11 @@ help:
 	  'make doctor            Check desired state; change nothing' \
 	  'make snapshot          Capture the current machine inventory' \
 	  'make validate          Validate repository syntax and rendering' \
+	  'make validate-linux    Render both profiles and parse Sway in Linux' \
 	  'make macos-defaults    Explicitly apply managed macOS preferences' \
 	  'make cleanup-preview   Preview undeclared Homebrew packages' \
 	  '' \
-	  'PROFILE=personal is the default. PROFILE=minimal uses Brewfile.minimal.'
+	  'PROFILE=personal is the default. PROFILE=minimal omits personal desktop integrations.'
 
 plan:
 	@PROFILE="$(PROFILE)" ./scripts/05_plan.sh
@@ -41,6 +42,9 @@ snapshot:
 
 validate:
 	@PROFILE="$(PROFILE)" ./scripts/07_validate.sh
+
+validate-linux:
+	@PROFILE="$(PROFILE)" ./scripts/09_validate-linux.sh
 
 macos-defaults:
 	@./scripts/03_macos-defaults.sh

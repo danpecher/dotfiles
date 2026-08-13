@@ -7,16 +7,50 @@ README.md
 Makefile
 Brewfile
 Brewfile.*
+packages
+packages/**
 docs
 docs/**
 state
 state/**
 scripts
 scripts/**
+systemd
+systemd/**
 
 # AeroSpace is intentionally dormant. Keep the source config for possible
 # future reuse without installing or managing it on current machines.
 .aerospace.toml
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Fedora/Sway targets.
+.config/Code
+.config/Code/**
+.config/dunst
+.config/dunst/**
+.config/foot
+.config/foot/**
+.config/kanshi
+.config/kanshi/**
+.config/rofi
+.config/rofi/**
+.config/sway
+.config/sway/**
+.config/waybar
+.config/waybar/**
+{{ else if eq .chezmoi.os "linux" -}}
+# macOS-only targets.
+Library
+Library/**
+.hammerspoon
+.hammerspoon/**
+.config/ghostty
+.config/ghostty/**
+.config/mole
+.config/mole/**
+.testcontainers.properties
+bin/ios-build
+{{ end -}}
 
 {{ if eq $activeProfile "minimal" -}}
 # Personal workstation integrations are excluded from the minimal profile.
@@ -32,4 +66,16 @@ scripts/**
 .zprofile
 .testcontainers.properties
 bin/ios-build
+.config/dunst
+.config/dunst/**
+.config/foot
+.config/foot/**
+.config/kanshi
+.config/kanshi/**
+.config/rofi
+.config/rofi/**
+.config/sway
+.config/sway/**
+.config/waybar
+.config/waybar/**
 {{ end -}}

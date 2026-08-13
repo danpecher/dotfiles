@@ -1,0 +1,6 @@
+# Add named profiles after inspecting outputs with: swaymsg -t get_outputs
+#
+# profile docked {
+#     output eDP-1 disable
+#     output "Dell Inc. DELL U2723QE ..." mode 3840x2160 position 0,0 scale 1.5
+# }

@@ -56,6 +56,9 @@ function y() {
 # fzf - fuzzy finder
 if [[ -f ~/.fzf.zsh ]]; then
     source ~/.fzf.zsh
+elif [[ -f /usr/share/fzf/shell/key-bindings.zsh ]]; then
+    source /usr/share/fzf/shell/key-bindings.zsh
+    [[ ! -f /usr/share/fzf/shell/completion.zsh ]] || source /usr/share/fzf/shell/completion.zsh
 fi
 
 # =============================================================================
@@ -122,7 +125,11 @@ alias lg='lazygit'
 
 # Shortcuts
 alias cl='clear'
+{{ if eq .chezmoi.os "darwin" -}}
 alias c='EDITOR="zed-preview --wait" claude'
+{{ else -}}
+alias c='EDITOR="${EDITOR:-nvim}" claude'
+{{ end -}}
 alias h='history'
 alias j='jobs -l'
 alias path='echo -e ${PATH//:/\\n}'
@@ -130,7 +137,11 @@ alias now='date +"%T"'
 alias today='date +"%Y-%m-%d"'
 
 # Interactive safety
-alias rm='trash'
+if command -v trash >/dev/null 2>&1; then
+    alias rm='trash'
+elif command -v trash-put >/dev/null 2>&1; then
+    alias rm='trash-put'
+fi
 alias cp='cp -i'
 alias mv='mv -i'
 
@@ -148,13 +159,17 @@ alias ni='npm install'
 # Zsh Plugins (via Homebrew)
 # =============================================================================
 # Autosuggestions
-if [[ -f $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
-    source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+if command -v brew >/dev/null 2>&1 && [[ -f "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+    source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+elif [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+    source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi
 
 # Syntax highlighting (must be last)
-if [[ -f $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
-    source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+if command -v brew >/dev/null 2>&1 && [[ -f "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+    source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+elif [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+    source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
 
 # =============================================================================
@@ -183,7 +198,11 @@ y # <------- will open yazi on start
 ############################
 
 # pnpm
+{{ if eq .chezmoi.os "darwin" -}}
 export PNPM_HOME="$HOME/Library/pnpm"
+{{ else -}}
+export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
+{{ end -}}
 case ":$PATH:" in
   *":$PNPM_HOME/bin:"*) ;;
   *) export PATH="$PNPM_HOME/bin:$PATH" ;;

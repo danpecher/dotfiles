@@ -3,7 +3,9 @@
 The committed desired state consists of:
 
 - `Brewfile` and `Brewfile.minimal` for named software declarations
-- `dot_config/mise/config.toml` for exact global runtime versions
+- `packages/fedora-*.txt` for Fedora CLI and Sway declarations
+- `packages/vscode-extensions.txt` for Fedora's cross-platform editor extensions
+- `dot_config/mise/config.toml.tmpl` for exact global runtime versions
 - `dot_config/nvim/lazy-lock.json` and pinned tmux commits for plugin versions
 - chezmoi source files for portable user configuration
 - `scripts/macos-defaults.tsv` for audited scalar macOS preferences

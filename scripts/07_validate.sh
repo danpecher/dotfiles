@@ -6,6 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 for script in "$SCRIPT_DIR"/*.sh; do
     bash -n "$script"
 done
+grep -q '^#!/usr/bin/env bash$' "$SCRIPT_DIR/01_bootstrap-linux.sh"
 awk -F '\t' '
     /^#/ || NF == 0 { next }
     NF != 5 { exit 1 }
@@ -35,6 +36,33 @@ validate_jsonc() {
 validate_jsonc "$DOTFILES_DIR/private_Library/Application Support/Code/User/settings.json"
 validate_jsonc "$DOTFILES_DIR/private_Library/Application Support/Code/User/keybindings.json"
 validate_jsonc "$DOTFILES_DIR/private_Library/Application Support/Code/User/snippets/pie.code-snippets"
+validate_jsonc "$DOTFILES_DIR/dot_config/waybar/config.jsonc"
+jq empty "$DOTFILES_DIR/dot_config/Code/User/keybindings.json"
+
+for package_file in "$DOTFILES_DIR"/packages/fedora-*.txt; do
+    if read_package_file "$package_file" | LC_ALL=C sort | uniq -d | grep -q .; then
+        printf 'duplicate Fedora package in %s\n' "$package_file" >&2
+        exit 1
+    fi
+done
+if read_package_file "$DOTFILES_DIR/packages/vscode-extensions.txt" \
+    | LC_ALL=C sort | uniq -d | grep -q .; then
+    printf 'duplicate VS Code extension in Fedora manifest\n' >&2
+    exit 1
+fi
+grep -q '^baseurl=https://packages.microsoft.com/yumrepos/vscode$' \
+    "$DOTFILES_DIR/packages/vscode.repo"
+comm -12 \
+    <(read_package_file "$DOTFILES_DIR/packages/fedora-common.txt" | LC_ALL=C sort) \
+    <(read_package_file "$DOTFILES_DIR/packages/fedora-sway.txt" | LC_ALL=C sort) \
+    | if grep -q .; then
+        printf 'Fedora package appears in both common and Sway manifests\n' >&2
+        exit 1
+    fi
+grep -q '^ExecStart=/usr/local/bin/kanata --cfg {{HOME}}/.config/kanata/kanata.kbd$' \
+    "$DOTFILES_DIR/systemd/kanata.service.tmpl"
+grep -q 'Skipping Kanata installation (SKIP_KANATA=1)' "$SCRIPT_DIR/02_setup.sh"
+grep -q 'skipped (SKIP_KANATA=1)' "$SCRIPT_DIR/04_audit.sh"
 
 if command -v kanata >/dev/null 2>&1; then
     kanata --check -c "$DOTFILES_DIR/dot_config/kanata/kanata.kbd" >/dev/null
@@ -78,10 +106,28 @@ for profile in personal minimal; do
     zsh -n "$rendered_zshrc"
 done
 
+rendered_zprofile="$tmp_dir/zprofile-personal"
+PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
+    execute-template < "$DOTFILES_DIR/dot_zprofile.tmpl" > "$rendered_zprofile"
+zsh -n "$rendered_zprofile"
+
+rendered_ssh_config="$tmp_dir/ssh-config-personal"
+PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
+    execute-template < "$DOTFILES_DIR/private_dot_ssh/config.tmpl" > "$rendered_ssh_config"
+ssh -G -T -F "$rendered_ssh_config" github.com >/dev/null
+
 grep -q '^y # <------- will open yazi on start$' "$tmp_dir/zshrc-personal"
 if grep -Eq '^(alias tm=tmuxinator|y # <------- will open yazi on start|export PNPM_HOME=)' \
     "$tmp_dir/zshrc-minimal"; then
     printf 'minimal profile unexpectedly includes personal shell behavior\n' >&2
+    exit 1
+fi
+
+rendered_mise="$tmp_dir/mise-personal.toml"
+PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
+    execute-template < "$DOTFILES_DIR/dot_config/mise/config.toml.tmpl" > "$rendered_mise"
+if grep -Eq '^(starship|lazygit|yazi|claude) = ' "$rendered_mise"; then
+    printf 'macOS mise config unexpectedly includes Linux-managed tools\n' >&2
     exit 1
 fi
 
@@ -101,5 +147,11 @@ PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_D
     execute-template < "$DOTFILES_DIR/private_dot_claude/private_settings.json.tmpl" \
     > "$rendered_claude_settings"
 jq empty "$rendered_claude_settings"
+
+rendered_linux_vscode_settings="$tmp_dir/linux-vscode-settings.jsonc"
+PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
+    execute-template < "$DOTFILES_DIR/dot_config/Code/User/settings.json.tmpl" \
+    > "$rendered_linux_vscode_settings"
+validate_jsonc "$rendered_linux_vscode_settings"
 
 printf 'validation passed\n'

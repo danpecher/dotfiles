@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 PROFILE="${PROFILE:-personal}"
+SKIP_KANATA="${SKIP_KANATA:-0}"
+OS="$(uname -s)"
 
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_NO_AUTO_UPDATE=1
@@ -27,6 +29,17 @@ brewfile_for_profile() {
             return 2
             ;;
     esac
+}
+
+fedora_package_files() {
+    printf '%s/packages/fedora-common.txt\n' "$DOTFILES_DIR"
+    if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
+        printf '%s/packages/fedora-sway.txt\n' "$DOTFILES_DIR"
+    fi
+}
+
+read_package_file() {
+    sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' "$1"
 }
 
 require_command() {

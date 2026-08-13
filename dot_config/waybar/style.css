@@ -1,0 +1,37 @@
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "Fira Code";
+  font-size: 13px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: #282828;
+  color: #ebdbb2;
+}
+
+#workspaces button {
+  color: #a89984;
+  padding: 0 8px;
+}
+
+#workspaces button.focused,
+#workspaces button.active {
+  background: #458588;
+  color: #fbf1c7;
+}
+
+#mode,
+#clock,
+#network,
+#pulseaudio,
+#cpu,
+#memory,
+#battery,
+#tray {
+  padding: 0 9px;
+}
+
+#battery.warning { color: #fabd2f; }
+#battery.critical { color: #fb4934; }

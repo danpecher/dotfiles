@@ -30,6 +30,15 @@ if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
     [[ -d "$candidate_root/.git" ]] && REPO_ROOT="$candidate_root"
 fi
 
+if [[ "$(uname -s)" == Linux ]]; then
+    if [[ -n "$REPO_ROOT" && -x "$REPO_ROOT/scripts/01_bootstrap-linux.sh" ]]; then
+        exec "$REPO_ROOT/scripts/01_bootstrap-linux.sh"
+    fi
+    PROFILE="$PROFILE" DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_REF="$DOTFILES_REF" \
+        /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/$DOTFILES_REPO/$DOTFILES_REF/scripts/01_bootstrap-linux.sh")"
+    exit
+fi
+
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }

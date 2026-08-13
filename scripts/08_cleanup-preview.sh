@@ -4,5 +4,9 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
-BREWFILE="$(brewfile_for_profile)"
-brew bundle cleanup --file="$BREWFILE"
+if [[ "$OS" == Darwin ]]; then
+    BREWFILE="$(brewfile_for_profile)"
+    brew bundle cleanup --file="$BREWFILE"
+else
+    warn "Fedora cleanup is intentionally not automated; review: dnf repoquery --userinstalled"
+fi

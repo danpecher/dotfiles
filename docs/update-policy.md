@@ -10,11 +10,19 @@ are declared by package name. Homebrew and the relevant application updater
 choose the installed version. Review package additions and removals manually;
 cleanup remains preview-only.
 
+Fedora RPMs are likewise rolling within the installed Fedora release and are
+declared by package name under `packages/`. Fedora upgrades remain an explicit
+system operation. mise comes from its maintainer's COPR, and VS Code comes from
+Microsoft's official RPM repository.
+
 ## Exact pins
 
-- Global mise runtimes use exact versions in `dot_config/mise/config.toml`.
+- Global mise runtimes use exact versions in `dot_config/mise/config.toml.tmpl`;
+  Linux also installs pinned Starship, LazyGit, and Yazi through mise, plus
+  Claude Code in the personal profile.
 - Neovim plugins use `dot_config/nvim/lazy-lock.json`.
 - tmux plugins use commit hashes in `scripts/02_setup.sh`.
+- Linux Kanata uses a checksummed v1.11.0 upstream release archive.
 - The simple-bar/AeroSpace integration is disabled and has no active pin.
 
 Update pins intentionally in a normal reviewed commit. Validate after changing

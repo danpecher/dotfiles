@@ -1,0 +1,34 @@
+{
+  "layer": "top",
+  "height": 30,
+  "spacing": 8,
+  "modules-left": ["sway/workspaces", "sway/mode"],
+  "modules-center": ["clock"],
+  "modules-right": ["network", "pulseaudio", "cpu", "memory", "battery", "tray"],
+  "sway/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true
+  },
+  "clock": {
+    "format": "{:%a %d %b  %H:%M}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+  },
+  "network": {
+    "format-wifi": "wifi {signalStrength}%",
+    "format-ethernet": "ethernet",
+    "format-disconnected": "offline",
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
+  },
+  "pulseaudio": {
+    "format": "vol {volume}%",
+    "format-muted": "muted",
+    "on-click": "pavucontrol"
+  },
+  "cpu": { "format": "cpu {usage}%" },
+  "memory": { "format": "mem {}%" },
+  "battery": {
+    "states": { "warning": 30, "critical": 15 },
+    "format": "bat {capacity}%",
+    "format-charging": "charging {capacity}%"
+  }
+}

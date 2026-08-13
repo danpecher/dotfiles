@@ -18,23 +18,27 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 PROFILE="${PROFILE:-${SETUP_PROFILE:-personal}}"
+SKIP_KANATA="${SKIP_KANATA:-0}"
 ACTION="${1:-bootstrap}"
+OS="$(uname -s)"
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
-# Check Homebrew
-if ! command -v brew &>/dev/null; then
-    error "Homebrew not found. Run 01_bootstrap.sh first."
-fi
-
-# Ensure Homebrew is in PATH
-if [[ -f "/opt/homebrew/bin/brew" ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [[ -f "/usr/local/bin/brew" ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
+# Ensure Homebrew is in PATH on macOS. Fedora uses dnf instead.
+if [[ "$OS" == Darwin ]]; then
+    if ! command -v brew &>/dev/null; then
+        error "Homebrew not found. Run 01_bootstrap.sh first."
+    fi
+    if [[ -f "/opt/homebrew/bin/brew" ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -f "/usr/local/bin/brew" ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+elif [[ "$OS" != Linux || ! -f /etc/fedora-release ]]; then
+    error "Unsupported platform. This setup supports macOS and Fedora Linux."
 fi
 
 echo ""
@@ -55,7 +59,11 @@ setup_ssh() {
 
         # Add to keychain
         eval "$(ssh-agent -s)"
-        ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+        if [[ "$OS" == Darwin ]]; then
+            ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+        else
+            ssh-add ~/.ssh/id_ed25519
+        fi
 
         success "SSH key generated"
     else
@@ -103,7 +111,7 @@ brewfile_for_profile() {
 
 # Install packages from the selected Brewfile. This is additive; cleanup is a
 # separate preview-only workflow.
-install_packages() {
+install_macos_packages() {
     local brewfile
     brewfile="$(brewfile_for_profile)"
     info "Installing packages from $(basename "$brewfile")..."
@@ -132,6 +140,90 @@ install_packages() {
     fi
 }
 
+fedora_package_files() {
+    printf '%s/packages/fedora-common.txt\n' "$DOTFILES_DIR"
+    if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
+        printf '%s/packages/fedora-sway.txt\n' "$DOTFILES_DIR"
+    fi
+}
+
+install_fedora_packages() {
+    local package_file
+    local -a packages=()
+    for package_file in $(fedora_package_files); do
+        while IFS= read -r package; do
+            [[ -n "$package" ]] && packages+=("$package")
+        done < <(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' "$package_file")
+    done
+    info "Enabling the official mise COPR for Fedora..."
+    sudo dnf install -y dnf-plugins-core
+    sudo dnf copr enable -y jdxcode/mise
+    info "Enabling the official Microsoft VS Code repository..."
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo install -o root -g root -m 0644 \
+        "$DOTFILES_DIR/packages/vscode.repo" /etc/yum.repos.d/vscode.repo
+    info "Installing ${#packages[@]} packages with dnf..."
+    sudo dnf install -y "${packages[@]}"
+    success "Fedora packages installed"
+}
+
+setup_vscode_extensions() {
+    [[ "$OS" == Linux ]] || return
+    command -v code >/dev/null 2>&1 || {
+        warn "VS Code is not installed; skipping extensions"
+        return
+    }
+    info "Installing declared VS Code extensions..."
+    while IFS= read -r extension; do
+        code --install-extension "$extension"
+    done < <(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' \
+        "$DOTFILES_DIR/packages/vscode-extensions.txt")
+    success "VS Code extensions installed"
+}
+
+install_linux_kanata() {
+    [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
+    if [[ "$SKIP_KANATA" == 1 ]]; then
+        warn "Skipping Kanata installation (SKIP_KANATA=1)"
+        return
+    fi
+    local version="1.11.0"
+    if [[ -x /usr/local/bin/kanata ]] && /usr/local/bin/kanata --version 2>/dev/null | grep -q "$version"; then
+        success "Kanata $version is already installed"
+        return
+    fi
+
+    case "$(uname -m)" in
+        x86_64)
+            local archive temp_dir
+            temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/kanata.XXXXXX")"
+            archive="$temp_dir/kanata.zip"
+            info "Installing pinned Kanata $version binary..."
+            curl -L --fail --silent --show-error \
+                -o "$archive" \
+                "https://github.com/jtroo/kanata/releases/download/v$version/linux-binaries-x64.zip"
+            printf '%s  %s\n' \
+                d9f634afb4c7f078cc2aacf3998fd65b432d4d83296cc48a89f941525459b4e2 \
+                "$archive" | sha256sum --check --status || error "Kanata checksum verification failed"
+            unzip -q "$archive" -d "$temp_dir"
+            sudo install -o root -g root -m 0755 "$temp_dir/kanata_linux_x64" /usr/local/bin/kanata
+            rm -rf "$temp_dir"
+            ;;
+        *)
+            error "The pinned Kanata Linux binary currently supports x86_64 only; unsupported architecture: $(uname -m)"
+            ;;
+    esac
+}
+
+install_packages() {
+    if [[ "$OS" == Darwin ]]; then
+        install_macos_packages
+    else
+        install_fedora_packages
+        install_linux_kanata
+    fi
+}
+
 # Setup mise
 setup_mise() {
     if ! command -v mise &>/dev/null; then
@@ -155,7 +247,11 @@ setup_mise() {
 setup_shell() {
     if [[ "$SHELL" != *"zsh"* ]]; then
         info "Changing default shell to zsh..."
-        chsh -s "$(which zsh)"
+        if [[ "$OS" == Darwin ]]; then
+            chsh -s "$(which zsh)"
+        else
+            sudo usermod --shell "$(command -v zsh)" "$USER"
+        fi
         success "Default shell changed to zsh"
     else
         success "zsh is already the default shell"
@@ -164,7 +260,7 @@ setup_shell() {
 
 # Setup fzf
 setup_fzf() {
-    if command -v fzf &>/dev/null; then
+    if [[ "$OS" == Darwin ]] && command -v fzf &>/dev/null; then
         info "Setting up fzf key bindings..."
         "$(brew --prefix)/opt/fzf/install" --key-bindings --completion --no-update-rc --no-bash --no-fish 2>/dev/null || true
         success "fzf configured"
@@ -226,10 +322,31 @@ setup_tmux() {
 # remapper should not process the same keyboard at the same time.
 setup_kanata() {
     [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
+    if [[ "$SKIP_KANATA" == 1 ]]; then
+        warn "Skipping Kanata service setup (SKIP_KANATA=1)"
+        return
+    fi
     command -v kanata >/dev/null 2>&1 || {
         warn "kanata is not installed"
         return
     }
+
+    if [[ "$OS" == Linux ]]; then
+        [[ -x /usr/local/bin/kanata ]] || error "Kanata is not installed; run 'make packages' first"
+        local unit_source="$DOTFILES_DIR/systemd/kanata.service.tmpl"
+        local unit_file
+        unit_file="$(mktemp "${TMPDIR:-/tmp}/kanata.service.XXXXXX")"
+        sed "s|{{HOME}}|$HOME|g" "$unit_source" > "$unit_file"
+        printf 'uinput\n' | sudo tee /etc/modules-load.d/kanata.conf >/dev/null
+        sudo modprobe uinput
+        sudo install -o root -g root -m 0644 "$unit_file" /etc/systemd/system/kanata.service
+        rm -f "$unit_file"
+        sudo systemctl daemon-reload
+        sudo systemctl enable kanata.service
+        sudo systemctl restart kanata.service
+        success "Kanata system service enabled and started"
+        return
+    fi
 
     local karabiner_config="$HOME/.config/karabiner/karabiner.json"
     if command -v jq >/dev/null 2>&1 && [[ -f "$karabiner_config" ]] &&
@@ -251,7 +368,7 @@ setup_kanata() {
     fi
 
     info "Enabling Kanata as a root Homebrew service at boot..."
-    sudo brew services start kanata
+    sudo brew services restart kanata
     success "Kanata service enabled and started"
 }
 
@@ -299,6 +416,7 @@ setup_xcode() {
 case "$ACTION" in
     packages)
         install_packages
+        setup_vscode_extensions
         setup_mise
         setup_tmux
         setup_fzf
@@ -310,9 +428,10 @@ case "$ACTION" in
         setup_ssh
         install_packages
         setup_github_ssh
+        setup_vscode_extensions
         setup_tmux
         setup_kanata
-        if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
+        if [[ "$OS" == Darwin && ( "$PROFILE" == personal || "$PROFILE" == full ) ]]; then
             setup_xcode
         fi
         setup_mise

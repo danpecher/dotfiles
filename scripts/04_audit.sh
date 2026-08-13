@@ -5,7 +5,8 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 source "$SCRIPT_DIR/macos-defaults-lib.sh"
 
-BREWFILE="$(brewfile_for_profile)"
+BREWFILE=""
+[[ "$OS" == Darwin ]] && BREWFILE="$(brewfile_for_profile)"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-doctor.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 drift=0
@@ -39,7 +40,11 @@ capture_checked() {
 }
 
 section "Profile"
-printf '%s (%s)\n' "$PROFILE" "$BREWFILE"
+if [[ "$OS" == Darwin ]]; then
+    printf '%s (%s)\n' "$PROFILE" "$BREWFILE"
+else
+    printf '%s (Fedora package manifests)\n' "$PROFILE"
+fi
 
 section "Chezmoi"
 if capture_checked "Chezmoi audit failed" "$TMP_DIR/chezmoi-status" \
@@ -52,7 +57,7 @@ if capture_checked "Chezmoi audit failed" "$TMP_DIR/chezmoi-status" \
     fi
 fi
 
-if command -v brew >/dev/null 2>&1; then
+if [[ "$OS" == Darwin ]] && command -v brew >/dev/null 2>&1; then
     brew_inventory_ok=1
     capture_checked "Homebrew Brewfile formula audit failed" "$TMP_DIR/wanted-brews.raw" \
         brew bundle list --file="$BREWFILE" --brews || brew_inventory_ok=0
@@ -88,9 +93,18 @@ if command -v brew >/dev/null 2>&1; then
             cat "$TMP_DIR/extra-brews" "$TMP_DIR/extra-casks" | LC_ALL=C sort -u | sed 's/^/  /'
         fi
     fi
+elif [[ "$OS" == Linux && -f /etc/fedora-release ]]; then
+    : > "$TMP_DIR/missing-fedora"
+    while IFS= read -r package_file; do
+        while IFS= read -r package; do
+            rpm -q --quiet "$package" || printf '%s\n' "$package" >> "$TMP_DIR/missing-fedora"
+        done < <(read_package_file "$package_file")
+    done < <(fedora_package_files)
+    LC_ALL=C sort -u -o "$TMP_DIR/missing-fedora" "$TMP_DIR/missing-fedora"
+    report_file "Missing Fedora packages" "$TMP_DIR/missing-fedora"
 else
     section "Homebrew"
-    fail "Homebrew is not installed"
+    fail "Unsupported package backend for $OS"
     drift=1
 fi
 
@@ -110,11 +124,21 @@ if command -v jq >/dev/null 2>&1 && command -v brew >/dev/null 2>&1; then
             report_file "Undeclared VS Code extensions" "$TMP_DIR/extra-vscode"
         fi
     fi
+elif [[ "$OS" == Linux ]] && command -v jq >/dev/null 2>&1 && command -v code >/dev/null 2>&1; then
+    read_package_file "$DOTFILES_DIR/packages/vscode-extensions.txt" \
+        | tr '[:upper:]' '[:lower:]' | LC_ALL=C sort -u > "$TMP_DIR/wanted-vscode"
+    list_vscode_extensions > "$TMP_DIR/all-vscode"
+    comm -23 "$TMP_DIR/wanted-vscode" "$TMP_DIR/all-vscode" > "$TMP_DIR/missing-vscode"
+    comm -23 "$TMP_DIR/all-vscode" "$TMP_DIR/wanted-vscode" > "$TMP_DIR/extra-vscode"
+    report_file "Missing VS Code extensions" "$TMP_DIR/missing-vscode"
+    if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
+        report_file "Undeclared VS Code extensions" "$TMP_DIR/extra-vscode"
+    fi
 fi
 
 if command -v mise >/dev/null 2>&1; then
     # Ignore project/parent mise.toml files; this audit owns only the global
-    # configuration applied from dot_config/mise/config.toml.
+    # configuration rendered from dot_config/mise/config.toml.tmpl.
     if capture_checked "mise audit failed" "$TMP_DIR/missing-mise" \
         mise ls --global --missing; then
         report_file "Missing mise tools" "$TMP_DIR/missing-mise"
@@ -131,10 +155,17 @@ if [[ "$(uname)" == Darwin && ( "$PROFILE" == personal || "$PROFILE" == full ) ]
     fi
 fi
 
-if [[ "$PROFILE" == personal || "$PROFILE" == full ]] && command -v kanata >/dev/null 2>&1; then
+if [[ "$SKIP_KANATA" == 1 && ( "$PROFILE" == personal || "$PROFILE" == full ) ]]; then
+    section "Kanata service"
+    printf 'skipped (SKIP_KANATA=1)\n'
+elif [[ "$OS" == Linux && ( "$PROFILE" == personal || "$PROFILE" == full ) ]] && ! command -v kanata >/dev/null 2>&1; then
+    section "Kanata service"
+    fail "Kanata is not installed"
+    drift=1
+elif [[ "$PROFILE" == personal || "$PROFILE" == full ]] && command -v kanata >/dev/null 2>&1; then
     section "Kanata service"
     karabiner_config="$HOME/.config/karabiner/karabiner.json"
-    if command -v jq >/dev/null 2>&1 && [[ -f "$karabiner_config" ]] &&
+    if [[ "$OS" == Darwin ]] && command -v jq >/dev/null 2>&1 && [[ -f "$karabiner_config" ]] &&
         jq -e '
             .profiles[]?
             | select(.selected == true)
@@ -144,10 +175,16 @@ if [[ "$PROFILE" == personal || "$PROFILE" == full ]] && command -v kanata >/dev
         fail "Karabiner mappings are enabled and can conflict with Kanata"
         drift=1
     fi
-    if launchctl print system/homebrew.mxcl.kanata 2>/dev/null | grep -q 'state = running'; then
+    if [[ "$OS" == Darwin ]] && launchctl print system/homebrew.mxcl.kanata 2>/dev/null | grep -q 'state = running'; then
+        printf 'running\n'
+    elif [[ "$OS" == Linux ]] && systemctl is-active --quiet kanata.service; then
         printf 'running\n'
     else
-        fail "not running (run: sudo brew services start kanata)"
+        if [[ "$OS" == Darwin ]]; then
+            fail "not running (run: sudo brew services start kanata)"
+        else
+            fail "not running (run: sudo systemctl enable --now kanata.service)"
+        fi
         drift=1
     fi
 fi

@@ -20,6 +20,7 @@ capture() {
     printf 'profile=%s\n' "$PROFILE"
     printf 'hostname=%s\n' "$host"
     printf 'macos=%s\n' "$(sw_vers -productVersion 2>/dev/null || true)"
+    printf 'linux=%s\n' "$(. /etc/os-release 2>/dev/null && printf '%s' "${PRETTY_NAME:-}" || true)"
     printf 'architecture=%s\n' "$(uname -m)"
 } > "$OUT_DIR/metadata.txt"
 
@@ -30,10 +31,17 @@ if command -v brew >/dev/null 2>&1; then
     brew services list 2>&1 | sed 's/[[:space:]]*$//' > "$OUT_DIR/brew-services.txt" || true
 fi
 
-if [[ "${SNAPSHOT_MAS:-0}" == 1 ]] && command -v mas >/dev/null 2>&1; then
-    capture mas-apps.txt mas list
-else
-    printf 'Set SNAPSHOT_MAS=1 to query the signed-in App Store account.\n' > "$OUT_DIR/mas-apps.txt"
+if [[ "$OS" == Linux && -f /etc/fedora-release ]]; then
+    capture fedora-packages.txt rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n'
+    capture system-services.txt systemctl list-units --type=service --all
+fi
+
+if [[ "$OS" == Darwin ]]; then
+    if [[ "${SNAPSHOT_MAS:-0}" == 1 ]] && command -v mas >/dev/null 2>&1; then
+        capture mas-apps.txt mas list
+    else
+        printf 'Set SNAPSHOT_MAS=1 to query the signed-in App Store account.\n' > "$OUT_DIR/mas-apps.txt"
+    fi
 fi
 
 if command -v jq >/dev/null 2>&1 && [[ -d "$HOME/.vscode/extensions" ]]; then
@@ -49,19 +57,25 @@ if command -v mise >/dev/null 2>&1; then
     capture mise-tools.txt mise ls --global
 fi
 
-{
-    find /Applications -maxdepth 1 -type d -name '*.app' -print 2>/dev/null || true
-    find "$HOME/Applications" -maxdepth 1 -type d -name '*.app' -print 2>/dev/null || true
-} | sed "s#^$HOME#~#" | LC_ALL=C sort -u > "$OUT_DIR/applications.txt"
-
-if [[ "${SNAPSHOT_GUI:-0}" == 1 ]] && command -v osascript >/dev/null 2>&1; then
-    osascript -e 'tell application "System Events" to get the name of every login item' \
-        > "$OUT_DIR/login-items.txt" 2>&1 || true
-else
-    printf 'Set SNAPSHOT_GUI=1 to query login items interactively.\n' > "$OUT_DIR/login-items.txt"
+if [[ "$OS" == Darwin ]]; then
+    {
+        find /Applications -maxdepth 1 -type d -name '*.app' -print 2>/dev/null || true
+        find "$HOME/Applications" -maxdepth 1 -type d -name '*.app' -print 2>/dev/null || true
+    } | sed "s#^$HOME#~#" | LC_ALL=C sort -u > "$OUT_DIR/applications.txt"
 fi
 
-capture system-extensions.txt systemextensionsctl list
+if [[ "$OS" == Darwin ]]; then
+    if [[ "${SNAPSHOT_GUI:-0}" == 1 ]] && command -v osascript >/dev/null 2>&1; then
+        osascript -e 'tell application "System Events" to get the name of every login item' \
+            > "$OUT_DIR/login-items.txt" 2>&1 || true
+    else
+        printf 'Set SNAPSHOT_GUI=1 to query login items interactively.\n' > "$OUT_DIR/login-items.txt"
+    fi
+fi
+
+if [[ "$OS" == Darwin ]]; then
+    capture system-extensions.txt systemextensionsctl list
+fi
 
 info "Snapshot written to $OUT_DIR"
 info "Raw snapshots are git-ignored private diagnostics; review files in place."

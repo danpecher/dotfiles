@@ -1,3 +1,7 @@
+{{- $activeProfile := env "PROFILE" -}}
+{{- if not (has $activeProfile (list "personal" "minimal")) -}}
+{{-   $activeProfile = get . "profile" | default "personal" -}}
+{{- end -}}
 # mise global configuration
 # Managed by chezmoi
 
@@ -14,6 +18,14 @@ java = "21.0.2"
 uv = "0.12.3"
 gradle = "9.7.0"
 pnpm = "11.21.0"
+{{ if eq .chezmoi.os "linux" -}}
+starship = "1.24.2"
+lazygit = "0.63.1"
+yazi = "26.5.6"
+{{ if eq $activeProfile "personal" -}}
+claude = "2.1.221"
+{{ end -}}
+{{ end -}}
 
 [env]
 EDITOR = "nvim"
