@@ -137,41 +137,10 @@ local function codex_sessions(root)
   return items
 end
 
-local function claude_sessions(root)
-  local home = vim.uv.os_homedir()
-  local indexes = vim.fn.glob(home .. "/.claude/projects/**/sessions-index.json", true, true)
-  local items = {}
-
-  for _, path in ipairs(indexes) do
-    local index = read_json(path)
-    for _, entry in ipairs((index and index.entries) or {}) do
-      if entry.sessionId and not entry.isSidechain and is_project_session(entry.projectPath, root) then
-        local mtime = entry.fileMtime and math.floor(entry.fileMtime / 1000) or stat_mtime(entry.fullPath or "")
-        local cwd = entry.projectPath or root
-        local title = clean_title(entry.firstPrompt)
-
-        items[#items + 1] = {
-          provider = "claude",
-          id = entry.sessionId,
-          title = title,
-          cwd = cwd,
-          mtime = mtime,
-          label = ("claude · %s"):format(title),
-          detail = format_time(mtime),
-          command = { "claude", "--resume", entry.sessionId },
-        }
-      end
-    end
-  end
-
-  return items
-end
-
 function M.sessions()
   local root = project_root()
   local items = {}
   vim.list_extend(items, codex_sessions(root))
-  vim.list_extend(items, claude_sessions(root))
 
   table.sort(items, function(a, b)
     return a.mtime > b.mtime

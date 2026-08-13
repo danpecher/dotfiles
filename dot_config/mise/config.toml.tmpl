@@ -19,12 +19,9 @@ uv = "0.12.3"
 gradle = "9.7.0"
 pnpm = "11.21.0"
 {{ if eq .chezmoi.os "linux" -}}
-starship = "1.24.2"
-lazygit = "0.63.1"
-yazi = "26.5.6"
-{{ if eq $activeProfile "personal" -}}
-claude = "2.1.221"
-{{ end -}}
+starship = "latest"
+lazygit = "latest"
+yazi = "latest"
 {{ end -}}
 
 [env]

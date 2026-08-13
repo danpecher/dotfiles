@@ -24,14 +24,9 @@ for profile in personal minimal; do
         execute-template < /src/dot_config/mise/config.toml.tmpl > "/tmp/mise-$profile.toml"
 done
 
-grep -q '^claude = "2.1.221"$' /tmp/mise-personal.toml
-if grep -q '^claude = ' /tmp/mise-minimal.toml; then
-    printf 'minimal Linux profile includes personal Claude Code tool\n' >&2
-    exit 1
-fi
 for tool in starship lazygit yazi; do
-    grep -q "^$tool = " /tmp/mise-personal.toml
-    grep -q "^$tool = " /tmp/mise-minimal.toml
+    grep -q "^$tool = \"latest\"$" /tmp/mise-personal.toml
+    grep -q "^$tool = \"latest\"$" /tmp/mise-minimal.toml
 done
 
 PROFILE=personal chezmoi --config /tmp/personal.toml --source /src \

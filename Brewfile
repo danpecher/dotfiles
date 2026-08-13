@@ -89,7 +89,7 @@ cask "fork"
 cask "orbstack"          # Docker alternative
 cask "tableplus"         # Database GUI
 cask "rapidapi"          # API client
-cask "zed@preview"       # Editor used by the Claude shortcut
+cask "zed@preview"
 
 # Productivity
 cask "raycast"           # Spotlight replacement
@@ -110,7 +110,6 @@ cask "rectangle"
 cask "monitorcontrol"    # External monitor brightness
 
 # AI
-cask "claude-code"
 cask "codex"
 
 # =============================================================================
@@ -126,7 +125,6 @@ cask "sf-symbols"
 vscode "openai.chatgpt"
 vscode "adpyke.vscode-sql-formatter"
 vscode "alefragnani.bookmarks"
-vscode "anthropic.claude-code"
 vscode "asvetliakov.vscode-neovim"
 vscode "avetis.tokyo-night"
 vscode "bierner.markdown-mermaid"

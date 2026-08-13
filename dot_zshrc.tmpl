@@ -125,11 +125,6 @@ alias lg='lazygit'
 
 # Shortcuts
 alias cl='clear'
-{{ if eq .chezmoi.os "darwin" -}}
-alias c='EDITOR="zed-preview --wait" claude'
-{{ else -}}
-alias c='EDITOR="${EDITOR:-nvim}" claude'
-{{ end -}}
 alias h='history'
 alias j='jobs -l'
 alias path='echo -e ${PATH//:/\\n}'

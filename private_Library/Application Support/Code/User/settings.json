@@ -12,7 +12,6 @@
     "git.autofetch": true,
     "security.workspace.trust.untrustedFiles": "open",
     "gitlens.graph.layout": "editor",
-    "claudeCode.selectedModel": "default",
     "gitTreeCompare.showCheckboxes": false,
     "gitTreeCompare.diffMode": "merge",
     "extensions.experimental.affinity": {
@@ -37,7 +36,6 @@
     "github.copilot.chat.organizationCustomAgents.enabled": false,
     "window.autoDetectColorScheme": true,
     "scm.countBadge": "off",
-    "claudeCode.preferredLocation": "panel",
     "chat.tools.urls.autoApprove": {
         "https://code.visualstudio.com": true,
         "https://github.com/microsoft/vscode/wiki/*": true,
@@ -53,7 +51,6 @@
     },
     "diffEditor.renderSideBySide": true,
     "diffEditor.ignoreTrimWhitespace": false,
-    "claudeCode.respectGitIgnore": false,
     "explorer.excludeGitIgnore": true,
     "diffEditor.hideUnchangedRegions.contextLineCount": 5,
     "diffEditor.renderIndicators": false,

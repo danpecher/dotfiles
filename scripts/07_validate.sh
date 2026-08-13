@@ -141,13 +141,13 @@ fi
 rendered_mise="$tmp_dir/mise-personal.toml"
 PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
     execute-template < "$DOTFILES_DIR/dot_config/mise/config.toml.tmpl" > "$rendered_mise"
-if grep -Eq '^(starship|lazygit|yazi|claude) = ' "$rendered_mise"; then
+if grep -Eq '^(starship|lazygit|yazi) = ' "$rendered_mise"; then
     printf 'macOS mise config unexpectedly includes Linux-managed tools\n' >&2
     exit 1
 fi
 
 if PROFILE=minimal chezmoi --config "$tmp_dir/minimal.toml" --source "$DOTFILES_DIR" managed |
-    grep -Eq '^(\.claude|\.hammerspoon|\.config/kanata|\.config/tmux-palette|\.tmux\.conf|\.zprofile|bin/ios-build)'; then
+    grep -Eq '^(\.hammerspoon|\.config/kanata|\.config/tmux-palette|\.tmux\.conf|\.zprofile|bin/ios-build)'; then
     printf 'minimal profile unexpectedly includes personal targets\n' >&2
     exit 1
 fi
@@ -166,12 +166,6 @@ if git config --file "$githubless_gitconfig" --get-regexp '^url\..*\.insteadof$'
     printf 'GitHub-less config unexpectedly rewrites HTTPS URLs to SSH\n' >&2
     exit 1
 fi
-
-rendered_claude_settings="$tmp_dir/claude-settings.json"
-PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
-    execute-template < "$DOTFILES_DIR/private_dot_claude/private_settings.json.tmpl" \
-    > "$rendered_claude_settings"
-jq empty "$rendered_claude_settings"
 
 rendered_linux_vscode_settings="$tmp_dir/linux-vscode-settings.jsonc"
 PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \

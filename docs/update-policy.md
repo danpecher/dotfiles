@@ -13,13 +13,14 @@ cleanup remains preview-only.
 Fedora RPMs are likewise rolling within the installed Fedora release and are
 declared by package name under `packages/`. Fedora upgrades remain an explicit
 system operation. mise comes from its maintainer's COPR, and VS Code comes from
-Microsoft's official RPM repository.
+Microsoft's official RPM repository. Fedora does not package Starship, LazyGit,
+or Yazi, so Linux resolves their `latest` releases through mise. Existing
+machines update them only when `mise upgrade` is run; there is no unattended
+updater.
 
 ## Exact pins
 
-- Global mise runtimes use exact versions in `dot_config/mise/config.toml.tmpl`;
-  Linux also installs pinned Starship, LazyGit, and Yazi through mise, plus
-  Claude Code in the personal profile.
+- Global mise runtimes use exact versions in `dot_config/mise/config.toml.tmpl`.
 - Neovim plugins use `dot_config/nvim/lazy-lock.json`.
 - tmux plugins use commit hashes in `scripts/02_setup.sh`.
 - Linux Kanata uses a checksummed v1.11.0 upstream release archive.

@@ -50,7 +50,7 @@ Version pinning and rolling-package rules are documented in
 Desired state is maintained intentionally:
 
 - Chezmoi source files: shell, Git, SSH, Ghostty, Kanata, Neovim,
-  mise, VS Code, Claude Code, Hammerspoon, tmux, btop, LazyGit, Mole,
+  mise, VS Code, Hammerspoon, tmux, btop, LazyGit, Mole,
   GH CLI, Testcontainers, personal scripts, and global gitignore
 - `Brewfile`: personal machine-wide formulae, applications, fonts, Mac App
   Store entries, and VS Code extensions

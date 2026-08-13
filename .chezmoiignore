@@ -54,8 +54,6 @@ bin/ios-build
 
 {{ if eq $activeProfile "minimal" -}}
 # Personal workstation integrations are excluded from the minimal profile.
-.claude
-.claude/**
 .hammerspoon
 .hammerspoon/**
 .config/kanata

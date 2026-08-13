@@ -155,11 +155,6 @@ map("n", "<leader>t", function()
   vscode.action("workbench.action.terminal.toggleTerminal")
 end)
 
--- Claude Code
-map("n", "<leader>cc", function()
-  vscode.action("claude-vscode.sidebar.open")
-end)
-
 -- Window management
 map("n", "<C-h>", function()
   vscode.action("workbench.action.focusLeftGroup")
