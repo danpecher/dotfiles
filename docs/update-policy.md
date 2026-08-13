@@ -23,6 +23,7 @@ updater.
 - Global mise runtimes use exact versions in `dot_config/mise/config.toml.tmpl`.
 - Neovim plugins use `dot_config/nvim/lazy-lock.json`.
 - tmux plugins use commit hashes in `scripts/02_setup.sh`.
+- Linux FiraCode Nerd Font uses the checksummed v3.5.0 upstream archive.
 - Linux Kanata uses a checksummed v1.11.0 upstream release archive.
 - The simple-bar/AeroSpace integration is disabled and has no active pin.
 

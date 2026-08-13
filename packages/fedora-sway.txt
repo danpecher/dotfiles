@@ -3,12 +3,10 @@ Thunar
 brightnessctl
 dunst
 firefox
-fira-code-fonts
 foot
 foot-terminfo
 grim
 grimshot
-jetbrains-mono-fonts
 kanshi
 lxpolkit
 network-manager-applet

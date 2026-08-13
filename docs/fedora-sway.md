@@ -22,6 +22,10 @@ normally unnecessary.
 
 Screenshots are stored in `~/Pictures/Screenshots`.
 
+The setup installs a checksummed FiraCode Nerd Font under
+`~/.local/share/fonts`; Foot, Waybar, Sway, Rofi, Dunst, and VS Code use its
+`FiraCode Nerd Font Mono` family so terminal and status icons render correctly.
+
 ## Machine-specific display layout
 
 Run `swaymsg -t get_outputs`, then add named profiles to

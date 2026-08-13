@@ -199,6 +199,32 @@ setup_vscode_extensions() {
     success "VS Code extensions installed"
 }
 
+install_linux_nerd_font() {
+    [[ "$OS" == Linux && ( "$PROFILE" == personal || "$PROFILE" == full ) ]] || return
+    local version="3.5.0"
+    local font_dir="$HOME/.local/share/fonts/nerd-fonts/FiraCode-$version"
+    if find "$font_dir" -maxdepth 1 -name '*NerdFont*.ttf' -print -quit 2>/dev/null | grep -q .; then
+        success "FiraCode Nerd Font $version is already installed"
+        return
+    fi
+
+    local archive temp_dir
+    temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/nerd-font.XXXXXX")"
+    archive="$temp_dir/FiraCode.zip"
+    info "Installing FiraCode Nerd Font $version..."
+    curl -L --fail --silent --show-error \
+        -o "$archive" \
+        "https://github.com/ryanoasis/nerd-fonts/releases/download/v$version/FiraCode.zip"
+    printf '%s  %s\n' \
+        8ad2834d8ea1945d8ab042538e608f6370573a29913aa94b5e6bbc92ffacbab5 \
+        "$archive" | sha256sum --check --status || error "Nerd Font checksum verification failed"
+    install -d -m 0755 "$font_dir"
+    unzip -oq "$archive" '*.ttf' -d "$font_dir"
+    rm -rf "$temp_dir"
+    fc-cache -f "$HOME/.local/share/fonts"
+    success "FiraCode Nerd Font $version installed"
+}
+
 install_linux_kanata() {
     [[ "$PROFILE" == personal || "$PROFILE" == full ]] || return
     if skip_step kanata; then
@@ -238,6 +264,7 @@ install_packages() {
         install_macos_packages
     else
         install_fedora_packages
+        install_linux_nerd_font
         install_linux_kanata
     fi
 }

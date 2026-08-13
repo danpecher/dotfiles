@@ -18,6 +18,23 @@ ruby -c "$DOTFILES_DIR/Brewfile" >/dev/null
 ruby -c "$DOTFILES_DIR/Brewfile.minimal" >/dev/null
 jq empty "$DOTFILES_DIR/dot_config/tmux-palette/theme.json"
 jq empty "$DOTFILES_DIR/dot_config/tmux-palette/palettes/tools.json"
+grep -q '^\[colors-dark\]$' "$DOTFILES_DIR/dot_config/foot/foot.ini"
+if grep -q '^\[colors\]$' "$DOTFILES_DIR/dot_config/foot/foot.ini"; then
+    printf 'Foot config uses the deprecated [colors] section\n' >&2
+    exit 1
+fi
+grep -q '^font=FiraCode Nerd Font Mono:' "$DOTFILES_DIR/dot_config/foot/foot.ini"
+grep -q "exec tmux new-session -A -s main" "$DOTFILES_DIR/dot_zshrc.tmpl"
+tmux_line="$(grep -n 'exec tmux new-session -A -s main' "$DOTFILES_DIR/dot_zshrc.tmpl" | cut -d: -f1)"
+yazi_line="$(grep -n '^y # <------- will open yazi on start$' "$DOTFILES_DIR/dot_zshrc.tmpl" | cut -d: -f1)"
+if [[ -z "$tmux_line" || -z "$yazi_line" || "$tmux_line" -ge "$yazi_line" ]]; then
+    printf 'tmux auto-start must occur before Yazi auto-start\n' >&2
+    exit 1
+fi
+grep -q 'run-shell ~/.config/tmux/plugins/tmux-gruvbox/gruvbox-tpm.tmux' \
+    "$DOTFILES_DIR/dot_tmux.conf"
+grep -q '8ad2834d8ea1945d8ab042538e608f6370573a29913aa94b5e6bbc92ffacbab5' \
+    "$SCRIPT_DIR/02_setup.sh"
 yq eval '.' "$DOTFILES_DIR/dot_config/private_gh/private_config.yml" >/dev/null
 if command -v luac >/dev/null 2>&1; then
     luac -p "$DOTFILES_DIR/dot_hammerspoon/init.lua"

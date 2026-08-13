@@ -8,7 +8,7 @@ require_command docker
 
 docker run --rm -i -v "$DOTFILES_DIR:/src:ro" alpine:latest sh -s <<'LINUX_VALIDATION'
 set -eu
-apk add --no-cache chezmoi git jq libcap openssh-client sway zsh >/dev/null 2>&1
+apk add --no-cache chezmoi foot git jq libcap openssh-client sway tmux zsh >/dev/null 2>&1
 mkdir -p /tmp/home
 
 for profile in personal minimal; do
@@ -73,5 +73,17 @@ if printf '%s\n' "$sway_output" | grep -q 'Overwriting binding'; then
     printf '%s\n' "$sway_output" >&2
     exit 1
 fi
+foot -C -c /src/dot_config/foot/foot.ini
+
+# Prove the explicit theme hook executes without depending on network access or
+# the real plugin checkout inside this disposable validation container.
+theme_dir=/tmp/home/.config/tmux/plugins/tmux-gruvbox
+mkdir -p "$theme_dir"
+printf '%s\n' '#!/bin/sh' 'tmux set-option -g @gruvbox-validation loaded' \
+    > "$theme_dir/gruvbox-tpm.tmux"
+chmod +x "$theme_dir/gruvbox-tpm.tmux"
+HOME=/tmp/home tmux -L dotfiles-validation -f /src/dot_tmux.conf new-session -d -s validation
+test "$(HOME=/tmp/home tmux -L dotfiles-validation show-option -gqv @gruvbox-validation)" = loaded
+HOME=/tmp/home tmux -L dotfiles-validation kill-server
 printf 'Linux rendering and Sway validation passed\n'
 LINUX_VALIDATION

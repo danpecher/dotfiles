@@ -24,7 +24,7 @@
     "nvimDashboard.maxRecentFiles": 0,
     "nvimDashboard.showDateTime": false,
     "zenMode.fullScreen": false,
-    "editor.fontFamily": "jetbrainsmono nerd font mono",
+    "editor.fontFamily": "FiraCode Nerd Font Mono",
     "python.analysis.typeCheckingMode": "standard",
     "roo-cline.debug": false,
     "roo-cline.allowedCommands": [

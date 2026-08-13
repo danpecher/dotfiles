@@ -188,6 +188,12 @@ if [[ -f "$HOME/.local/bin/env" ]]; then
 fi
 
 {{ if eq $activeProfile "personal" -}}
+# Start or attach the main tmux session before launching interactive tools.
+# exec avoids returning to an unused outer shell after detaching.
+if [[ -z "$TMUX" && -t 0 && -t 1 ]] && command -v tmux >/dev/null; then
+  exec tmux new-session -A -s main
+fi
+
 ############################
 y # <------- will open yazi on start
 ############################

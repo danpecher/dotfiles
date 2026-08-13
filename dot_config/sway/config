@@ -7,7 +7,7 @@ set $right l
 set $term footclient
 set $menu rofi -show drun -show-icons
 
-font pango:Fira Code 10
+font pango:FiraCode Nerd Font Mono 10
 floating_modifier $mod normal
 default_border pixel 2
 default_floating_border pixel 2
