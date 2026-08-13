@@ -189,6 +189,16 @@ elif [[ "$PROFILE" == personal || "$PROFILE" == full ]] && command -v kanata >/d
     fi
 fi
 
+if [[ "$OS" == Linux ]]; then
+    section "Tailscale service"
+    if systemctl is-active --quiet tailscaled.service; then
+        printf 'running\n'
+    else
+        fail "not running (run: sudo systemctl enable --now tailscaled.service)"
+        drift=1
+    fi
+fi
+
 section "Result"
 if (( drift )); then
     fail "drift detected"

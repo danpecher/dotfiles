@@ -1,10 +1,12 @@
 # Portable command-line baseline. One Fedora package per line.
+atuin
 bat
 btop
 chezmoi
 cmake
 code
 curl
+direnv
 dnf-plugins-core
 eza
 fd-find
@@ -19,9 +21,11 @@ libpq
 mise
 neovim
 openssh-clients
+pgcli
 procps-ng
 ripgrep
 rust
+tailscale
 tmux
 trash-cli
 tree

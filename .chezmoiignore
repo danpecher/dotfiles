@@ -30,6 +30,8 @@ systemd/**
 .config/dunst/**
 .config/foot
 .config/foot/**
+.config/fontconfig
+.config/fontconfig/**
 .config/kanshi
 .config/kanshi/**
 .config/rofi

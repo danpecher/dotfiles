@@ -23,7 +23,12 @@ if grep -q '^\[colors\]$' "$DOTFILES_DIR/dot_config/foot/foot.ini"; then
     printf 'Foot config uses the deprecated [colors] section\n' >&2
     exit 1
 fi
-grep -q '^font=FiraCode Nerd Font Mono:' "$DOTFILES_DIR/dot_config/foot/foot.ini"
+grep -q '^font=JetBrainsMono Nerd Font Mono:' "$DOTFILES_DIR/dot_config/foot/foot.ini"
+grep -q '^dpi-aware=yes$' "$DOTFILES_DIR/dot_config/foot/foot.ini"
+grep -q '^gamma-correct-blending=yes$' "$DOTFILES_DIR/dot_config/foot/foot.ini"
+grep -q '^    natural_scroll enabled$' "$DOTFILES_DIR/dot_config/sway/config"
+grep -q '^if command -v direnv &>/dev/null; then$' "$DOTFILES_DIR/dot_zshrc.tmpl"
+grep -q 'atuin init zsh --disable-up-arrow' "$DOTFILES_DIR/dot_zshrc.tmpl"
 grep -q "exec tmux new-session -A -s main" "$DOTFILES_DIR/dot_zshrc.tmpl"
 tmux_line="$(grep -n 'exec tmux new-session -A -s main' "$DOTFILES_DIR/dot_zshrc.tmpl" | cut -d: -f1)"
 yazi_line="$(grep -n '^y # <------- will open yazi on start$' "$DOTFILES_DIR/dot_zshrc.tmpl" | cut -d: -f1)"
@@ -33,7 +38,7 @@ if [[ -z "$tmux_line" || -z "$yazi_line" || "$tmux_line" -ge "$yazi_line" ]]; th
 fi
 grep -q 'run-shell ~/.config/tmux/plugins/tmux-gruvbox/gruvbox-tpm.tmux' \
     "$DOTFILES_DIR/dot_tmux.conf"
-grep -q '8ad2834d8ea1945d8ab042538e608f6370573a29913aa94b5e6bbc92ffacbab5' \
+grep -q '9577de1ae84ec523df16fc69bac5338b89497a5b4fb91489e2dcb79dc06ac2b5' \
     "$SCRIPT_DIR/02_setup.sh"
 yq eval '.' "$DOTFILES_DIR/dot_config/private_gh/private_config.yml" >/dev/null
 if command -v luac >/dev/null 2>&1; then
@@ -61,6 +66,9 @@ for package_file in "$DOTFILES_DIR"/packages/fedora-*.txt; do
         printf 'duplicate Fedora package in %s\n' "$package_file" >&2
         exit 1
     fi
+done
+for package in atuin direnv pgcli tailscale; do
+    grep -q "^$package$" "$DOTFILES_DIR/packages/fedora-common.txt"
 done
 if read_package_file "$DOTFILES_DIR/packages/vscode-extensions.txt" \
     | LC_ALL=C sort | uniq -d | grep -q .; then
@@ -158,7 +166,7 @@ fi
 rendered_mise="$tmp_dir/mise-personal.toml"
 PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
     execute-template < "$DOTFILES_DIR/dot_config/mise/config.toml.tmpl" > "$rendered_mise"
-if grep -Eq '^(starship|lazygit|yazi) = ' "$rendered_mise"; then
+if grep -Eq '^(starship|lazygit|yazi|"gem:tmuxinator"|"pipx:mitmproxy") = ' "$rendered_mise"; then
     printf 'macOS mise config unexpectedly includes Linux-managed tools\n' >&2
     exit 1
 fi

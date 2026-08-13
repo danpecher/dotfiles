@@ -12,6 +12,8 @@ separate secret/data backup:
 - work MDM enrollment and employer certificates
 - Touch ID, Secure Enclave keys, and passkeys
 - application licenses and signed-in sessions
+- Tailscale account authentication. On Linux the daemon is enabled
+  automatically, but joining a tailnet remains explicit: `sudo tailscale up`.
 - SSH private keys and recovery codes
 - application databases, documents, and browser profiles
 - Karabiner VirtualHID approval and Kanata Input Monitoring/Accessibility

@@ -202,27 +202,27 @@ setup_vscode_extensions() {
 install_linux_nerd_font() {
     [[ "$OS" == Linux && ( "$PROFILE" == personal || "$PROFILE" == full ) ]] || return
     local version="3.5.0"
-    local font_dir="$HOME/.local/share/fonts/nerd-fonts/FiraCode-$version"
+    local font_dir="$HOME/.local/share/fonts/nerd-fonts/JetBrainsMono-$version"
     if find "$font_dir" -maxdepth 1 -name '*NerdFont*.ttf' -print -quit 2>/dev/null | grep -q .; then
-        success "FiraCode Nerd Font $version is already installed"
+        success "JetBrainsMono Nerd Font $version is already installed"
         return
     fi
 
     local archive temp_dir
     temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/nerd-font.XXXXXX")"
-    archive="$temp_dir/FiraCode.zip"
-    info "Installing FiraCode Nerd Font $version..."
+    archive="$temp_dir/JetBrainsMono.zip"
+    info "Installing JetBrainsMono Nerd Font $version..."
     curl -L --fail --silent --show-error \
         -o "$archive" \
-        "https://github.com/ryanoasis/nerd-fonts/releases/download/v$version/FiraCode.zip"
+        "https://github.com/ryanoasis/nerd-fonts/releases/download/v$version/JetBrainsMono.zip"
     printf '%s  %s\n' \
-        8ad2834d8ea1945d8ab042538e608f6370573a29913aa94b5e6bbc92ffacbab5 \
+        9577de1ae84ec523df16fc69bac5338b89497a5b4fb91489e2dcb79dc06ac2b5 \
         "$archive" | sha256sum --check --status || error "Nerd Font checksum verification failed"
     install -d -m 0755 "$font_dir"
     unzip -oq "$archive" '*.ttf' -d "$font_dir"
     rm -rf "$temp_dir"
     fc-cache -f "$HOME/.local/share/fonts"
-    success "FiraCode Nerd Font $version installed"
+    success "JetBrainsMono Nerd Font $version installed"
 }
 
 install_linux_kanata() {
@@ -417,6 +417,22 @@ setup_kanata() {
     success "Kanata service enabled and started"
 }
 
+setup_tailscale() {
+    [[ "$OS" == Linux ]] || return
+    command -v tailscale >/dev/null 2>&1 || {
+        warn "Tailscale is not installed"
+        return
+    }
+
+    info "Enabling the Tailscale daemon..."
+    sudo systemctl enable --now tailscaled.service
+    if ! tailscale status >/dev/null 2>&1; then
+        warn "Tailscale is not authenticated; connect later with: sudo tailscale up"
+    else
+        success "Tailscale daemon enabled and connected"
+    fi
+}
+
 # Configure an existing Xcode installation. A bootstrap should not silently
 # download a multi-gigabyte application; install Xcode explicitly when needed.
 setup_xcode() {
@@ -468,6 +484,7 @@ case "$ACTION" in
         ;;
     services)
         setup_kanata
+        setup_tailscale
         ;;
     bootstrap)
         setup_ssh
@@ -476,6 +493,7 @@ case "$ACTION" in
         setup_vscode_extensions
         setup_tmux
         setup_kanata
+        setup_tailscale
         if [[ "$OS" == Darwin && ( "$PROFILE" == personal || "$PROFILE" == full ) ]]; then
             setup_xcode
         fi

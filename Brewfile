@@ -32,7 +32,8 @@ brew "jq"                # JSON processing
 brew "yq"                # YAML processing
 brew "mas"               # Mac App Store CLI
 brew "kanata"            # Keyboard remapping
-brew "mcfly"             # Searchable shell history
+brew "atuin"             # Searchable, structured shell history
+brew "direnv"            # Per-directory environments
 brew "mosh"              # Resilient remote shell
 brew "navi"              # Interactive command cheatsheets
 brew "mole"              # Mac cleanup tool; protected paths are managed by chezmoi
@@ -73,6 +74,7 @@ brew "xcode-build-server"
 brew "xcodes"            # Xcode version manager
 brew "cocoapods"         # iOS dependency manager
 brew "libpq"             # PostgreSQL client libraries and psql
+brew "pgcli"             # Interactive PostgreSQL client
 brew "flyctl"
 brew "render"            # Render CLI
 
@@ -108,6 +110,7 @@ cask "proxyman"
 cask "rectangle"
 # cask "ubersicht"
 cask "monitorcontrol"    # External monitor brightness
+cask "tailscale-app"     # Mesh VPN client
 
 # AI
 cask "codex"

@@ -101,10 +101,12 @@ shared `/opt/homebrew` installation. A second account can share the repository's
 dotfiles while using account-local mise and editor state; it should not run
 Homebrew cleanup against the minimal Brewfile.
 
-On Fedora, the personal profile includes Sway, Waybar, Foot, Rofi, Dunst,
-Kanshi, Wayland screenshot/clipboard tools, VS Code from Microsoft's official
-RPM repository, and Kanata as a system service. The minimal profile installs
-only portable CLI/editor state and omits the desktop. See
+Both Fedora profiles include the portable CLI/editor baseline and an enabled
+Tailscale daemon; Tailscale account authentication remains an explicit manual
+step. The personal profile additionally includes Sway, Waybar, Foot, Rofi,
+Dunst, Kanshi, Wayland screenshot/clipboard tools, VS Code from Microsoft's
+official RPM repository, and Kanata as a system service. The minimal profile
+omits the desktop. See
 [`docs/fedora-sway.md`](docs/fedora-sway.md) for keybindings, monitor setup, and
 service diagnostics.
 

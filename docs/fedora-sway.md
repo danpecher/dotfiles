@@ -22,9 +22,22 @@ normally unnecessary.
 
 Screenshots are stored in `~/Pictures/Screenshots`.
 
-The setup installs a checksummed FiraCode Nerd Font under
+The setup installs a checksummed JetBrainsMono Nerd Font under
 `~/.local/share/fonts`; Foot, Waybar, Sway, Rofi, Dunst, and VS Code use its
-`FiraCode Nerd Font Mono` family so terminal and status icons render correctly.
+`JetBrainsMono Nerd Font Mono` family so terminal and status icons render
+correctly. Fontconfig uses grayscale antialiasing with slight hinting, and Foot
+uses DPI-aware sizing plus gamma-correct blending for clearer text.
+
+Natural scrolling is enabled for both touchpads and mouse wheels.
+
+## Tailscale
+
+The bootstrap installs Tailscale from Fedora, enables `tailscaled`, and leaves
+account authentication explicit. Connect the VM when desired with:
+
+```bash
+sudo tailscale up
+```
 
 ## Machine-specific display layout
 
