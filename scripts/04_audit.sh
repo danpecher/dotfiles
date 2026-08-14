@@ -43,7 +43,7 @@ section "Profile"
 if [[ "$OS" == Darwin ]]; then
     printf '%s (%s)\n' "$PROFILE" "$BREWFILE"
 else
-    printf '%s (Fedora package manifests)\n' "$PROFILE"
+    printf '%s (%s package manifests)\n' "$PROFILE" "${LINUX_DISTRO:-unsupported Linux}"
 fi
 
 section "Chezmoi"
@@ -93,17 +93,17 @@ if [[ "$OS" == Darwin ]] && command -v brew >/dev/null 2>&1; then
             cat "$TMP_DIR/extra-brews" "$TMP_DIR/extra-casks" | LC_ALL=C sort -u | sed 's/^/  /'
         fi
     fi
-elif [[ "$OS" == Linux && -f /etc/fedora-release ]]; then
-    : > "$TMP_DIR/missing-fedora"
+elif [[ "$OS" == Linux && -n "$LINUX_FAMILY" ]]; then
+    : > "$TMP_DIR/missing-linux"
     while IFS= read -r package_file; do
         while IFS= read -r package; do
-            rpm -q --quiet "$package" || printf '%s\n' "$package" >> "$TMP_DIR/missing-fedora"
+            linux_package_installed "$package" || printf '%s\n' "$package" >> "$TMP_DIR/missing-linux"
         done < <(read_package_file "$package_file")
-    done < <(fedora_package_files)
-    LC_ALL=C sort -u -o "$TMP_DIR/missing-fedora" "$TMP_DIR/missing-fedora"
-    report_file "Missing Fedora packages" "$TMP_DIR/missing-fedora"
+    done < <(linux_package_files)
+    LC_ALL=C sort -u -o "$TMP_DIR/missing-linux" "$TMP_DIR/missing-linux"
+    report_file "Missing $LINUX_DISTRO packages" "$TMP_DIR/missing-linux"
 else
-    section "Homebrew"
+    section "Packages"
     fail "Unsupported package backend for $OS"
     drift=1
 fi

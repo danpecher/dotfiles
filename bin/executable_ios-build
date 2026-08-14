@@ -228,10 +228,8 @@ echo ""
 # --- Build ---
 if [ "$DEVICE_TYPE" = "simulator" ]; then
   DESTINATION="platform=iOS Simulator,id=$DEVICE_ID"
-  PRODUCTS_DIR="Debug-iphonesimulator"
 else
   DESTINATION="platform=iOS,id=$DEVICE_ID"
-  PRODUCTS_DIR="Debug-iphoneos"
 fi
 
 if [ "$CLEAN" = true ]; then

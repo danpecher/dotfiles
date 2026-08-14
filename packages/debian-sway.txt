@@ -1,26 +1,23 @@
-# Fedora Sway desktop baseline for the personal profile.
-Thunar
+# Sway desktop baseline for Debian.
 brightnessctl
 dunst
-firefox
+firefox-esr
 foot
-foot-terminfo
 grim
 kanshi
-librsvg2
+librsvg2-common
 lxpolkit
-network-manager-applet
+network-manager-gnome
 pavucontrol
 playerctl
-polkit
+policykit-1
 rofi
 slurp
 sway
 swaybg
-sway-config-fedora
-sway-systemd
 swayidle
 swaylock
+thunar
 waybar
 wireplumber
 wl-clipboard

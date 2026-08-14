@@ -1,34 +1,54 @@
 {
   "layer": "top",
-  "height": 30,
-  "spacing": 8,
+  "position": "top",
+  "height": 38,
+  "margin-top": 8,
+  "margin-left": 10,
+  "margin-right": 10,
+  "spacing": 6,
   "modules-left": ["sway/workspaces", "sway/mode"],
   "modules-center": ["clock"],
   "modules-right": ["network", "pulseaudio", "cpu", "memory", "battery", "tray"],
   "sway/workspaces": {
     "disable-scroll": true,
-    "all-outputs": true
+    "all-outputs": true,
+    "format": "{name}"
   },
   "clock": {
-    "format": "{:%a %d %b  %H:%M}",
+    "interval": 60,
+    "format": "󰥔  {:%a %d %b  %H:%M}",
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
   },
   "network": {
-    "format-wifi": "wifi {signalStrength}%",
-    "format-ethernet": "ethernet",
-    "format-disconnected": "offline",
-    "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
+    "format-wifi": "󰖩  {signalStrength}%",
+    "format-ethernet": "󰈀  wired",
+    "format-disconnected": "󰖪  offline",
+    "tooltip-format-wifi": "{essid}\n{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}",
+    "on-click": "nm-connection-editor"
   },
   "pulseaudio": {
-    "format": "vol {volume}%",
-    "format-muted": "muted",
-    "on-click": "pavucontrol"
+    "format": "󰕾  {volume}%",
+    "format-muted": "󰖁  muted",
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "scroll-step": 5
   },
-  "cpu": { "format": "cpu {usage}%" },
-  "memory": { "format": "mem {}%" },
+  "cpu": {
+    "format": "  {usage}%",
+    "tooltip": true,
+    "interval": 2
+  },
+  "memory": {
+    "format": "  {}%",
+    "tooltip-format": "{used:0.1f} GiB used"
+  },
   "battery": {
     "states": { "warning": 30, "critical": 15 },
-    "format": "bat {capacity}%",
-    "format-charging": "charging {capacity}%"
-  }
+    "format": "󰁹  {capacity}%",
+    "format-charging": "󰂄  {capacity}%",
+    "format-plugged": "󰂄  {capacity}%",
+    "tooltip-format": "{timeTo} · {power:.1f} W"
+  },
+  "tray": { "spacing": 8 }
 }

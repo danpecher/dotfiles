@@ -8,7 +8,7 @@ require_command docker
 
 docker run --rm -i -v "$DOTFILES_DIR:/src:ro" alpine:latest sh -s <<'LINUX_VALIDATION'
 set -eu
-apk add --no-cache chezmoi fontconfig foot git jq libcap openssh-client sway tmux zsh >/dev/null 2>&1
+apk add --no-cache chezmoi fontconfig foot git jq libcap openssh-client shellcheck sway tmux zsh >/dev/null 2>&1
 mkdir -p /tmp/home
 
 for profile in personal minimal; do
@@ -24,11 +24,13 @@ for profile in personal minimal; do
         execute-template < /src/dot_config/mise/config.toml.tmpl > "/tmp/mise-$profile.toml"
 done
 
-for tool in starship lazygit yazi; do
+for tool in atuin bat delta direnv eza fd glow lazygit shellcheck shfmt starship watchexec yazi yq zoxide; do
     grep -q "^$tool = \"latest\"$" /tmp/mise-personal.toml
     grep -q "^$tool = \"latest\"$" /tmp/mise-minimal.toml
 done
-for tool in 'gem:tmuxinator' 'pipx:mitmproxy'; do
+
+shellcheck --severity=warning /src/scripts/*.sh /src/bin/executable_ios-build
+for tool in 'gem:tmuxinator' 'pipx:mitmproxy' 'pipx:pgcli'; do
     grep -q "^\"$tool\" = \"latest\"$" /tmp/mise-personal.toml
     grep -q "^\"$tool\" = \"latest\"$" /tmp/mise-minimal.toml
 done
@@ -43,6 +45,9 @@ ssh -G -T -F /tmp/ssh-config-personal github.com >/dev/null
 PROFILE=personal chezmoi --config /tmp/personal.toml --source /src managed > /tmp/personal-managed
 grep -q '^.config/sway/config$' /tmp/personal-managed
 grep -q '^.config/Code/User/settings.json$' /tmp/personal-managed
+grep -q '^.config/Code - OSS/User$' /tmp/personal-managed
+grep -q '^bin/sway-screenshot$' /tmp/personal-managed
+grep -q '^.local/share/wallpapers/gruvbox-horizon.svg$' /tmp/personal-managed
 jq empty /src/dot_config/Code/User/keybindings.json
 PROFILE=personal chezmoi --config /tmp/personal.toml --source /src \
     execute-template < /src/dot_config/Code/User/settings.json.tmpl > /tmp/vscode-settings-linux.jsonc
@@ -56,7 +61,7 @@ if grep -Eq '^(Library|.hammerspoon|.config/ghostty|bin/ios-build)' /tmp/persona
 fi
 
 PROFILE=minimal chezmoi --config /tmp/minimal.toml --source /src managed > /tmp/minimal-managed
-if grep -Eq '^.config/(sway|waybar|kanata)' /tmp/minimal-managed; then
+if grep -Eq '^(\.config/(sway|waybar|kanata)|\.local/share/wallpapers|bin/sway-screenshot)' /tmp/minimal-managed; then
     printf 'minimal Linux profile includes a personal desktop target\n' >&2
     exit 1
 fi

@@ -108,8 +108,14 @@ fi
 # Better defaults
 if command -v bat &>/dev/null; then
     alias cat='bat'
+elif command -v batcat &>/dev/null; then
+    alias cat='batcat'
 fi
-alias find='fd'
+if command -v fd &>/dev/null; then
+    alias find='fd'
+elif command -v fdfind &>/dev/null; then
+    alias find='fdfind'
+fi
 alias grep='rg'
 
 # Git
@@ -166,6 +172,8 @@ if command -v brew >/dev/null 2>&1 && [[ -f "$(brew --prefix)/share/zsh-autosugg
     source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 elif [[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
     source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+elif [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+    source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi
 
 # Syntax highlighting (must be last)
@@ -173,6 +181,8 @@ if command -v brew >/dev/null 2>&1 && [[ -f "$(brew --prefix)/share/zsh-syntax-h
     source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 elif [[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
     source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+elif [[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+    source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
 
 # =============================================================================

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Bootstrap script - Complete macOS setup from scratch
+# Bootstrap script - Complete macOS or supported Linux setup from scratch
 #
 # Usage (run in a new shell to preserve TTY for sudo prompts):
 #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/danpecher/dotfiles/master/scripts/01_bootstrap.sh)"
@@ -209,7 +209,7 @@ if [[ "$apply_dotfiles" =~ ^[Yy]$ ]]; then
     chezmoi --source="$DOTFILES_DIR" apply --interactive
 else
     warn "Dotfiles were not applied. Bootstrap is stopping before package and service setup."
-    info "Review later with: cd $DOTFILES_DIR && make plan"
+    info "Review later with: cd $DOTFILES_DIR && make diff"
     exit 0
 fi
 

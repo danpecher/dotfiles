@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+mode="${1:-output}"
+screenshot_dir="$HOME/Pictures/Screenshots"
+screenshot_file="$screenshot_dir/$(date '+%Y-%m-%d_%H-%M-%S').png"
+mkdir -p "$screenshot_dir"
+
+case "$mode" in
+    output)
+        output_name="$(swaymsg -t get_outputs --raw | jq -r '.[] | select(.focused) | .name')"
+        [[ -n "$output_name" ]] || {
+            printf 'Could not determine the focused Sway output\n' >&2
+            exit 1
+        }
+        grim -o "$output_name" "$screenshot_file"
+        ;;
+    area)
+        geometry="$(slurp)" || exit 0
+        [[ -n "$geometry" ]] || exit 0
+        grim -g "$geometry" "$screenshot_file"
+        ;;
+    *)
+        printf 'Usage: %s {output|area}\n' "${0##*/}" >&2
+        exit 2
+        ;;
+esac
+
+printf '%s\n' "$screenshot_file"

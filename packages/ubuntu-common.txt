@@ -1,0 +1,30 @@
+# Portable baseline for Ubuntu. User-space CLI tools with inconsistent package
+# names or availability are installed through mise.
+btop
+ca-certificates
+cargo
+cmake
+code
+curl
+fzf
+gh
+git
+git-lfs
+gnupg
+jq
+mise
+neovim
+openssh-client
+postgresql-client
+procps
+ripgrep
+rustc
+tailscale
+tar
+tmux
+trash-cli
+tree
+unzip
+zsh
+zsh-autosuggestions
+zsh-syntax-highlighting

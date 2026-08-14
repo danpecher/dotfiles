@@ -13,7 +13,9 @@ awk -F '\t' '
     $1 !~ /^(user|system)$/ { exit 1 }
     $4 !~ /^(bool|int|float|string)$/ { exit 1 }
 ' "$SCRIPT_DIR/macos-defaults.tsv"
-bash -n "$DOTFILES_DIR/bin/executable_ios-build"
+for executable in "$DOTFILES_DIR"/bin/executable_*; do
+    bash -n "$executable"
+done
 ruby -c "$DOTFILES_DIR/Brewfile" >/dev/null
 ruby -c "$DOTFILES_DIR/Brewfile.minimal" >/dev/null
 jq empty "$DOTFILES_DIR/dot_config/tmux-palette/theme.json"
@@ -27,6 +29,11 @@ grep -q '^font=JetBrainsMono Nerd Font Mono:' "$DOTFILES_DIR/dot_config/foot/foo
 grep -q '^dpi-aware=yes$' "$DOTFILES_DIR/dot_config/foot/foot.ini"
 grep -q '^gamma-correct-blending=yes$' "$DOTFILES_DIR/dot_config/foot/foot.ini"
 grep -q '^    natural_scroll enabled$' "$DOTFILES_DIR/dot_config/sway/config"
+grep -q 'bin/sway-screenshot" output' "$DOTFILES_DIR/dot_config/sway/config"
+if grep -q '^include /etc/sway/' "$DOTFILES_DIR/dot_config/sway/config"; then
+    printf 'Sway config unexpectedly includes distribution defaults\n' >&2
+    exit 1
+fi
 grep -q '^if command -v direnv &>/dev/null; then$' "$DOTFILES_DIR/dot_zshrc.tmpl"
 grep -q 'atuin init zsh --disable-up-arrow' "$DOTFILES_DIR/dot_zshrc.tmpl"
 grep -q "exec tmux new-session -A -s main" "$DOTFILES_DIR/dot_zshrc.tmpl"
@@ -41,6 +48,11 @@ grep -q 'run-shell ~/.config/tmux/plugins/tmux-gruvbox/gruvbox-tpm.tmux' \
 grep -q '9577de1ae84ec523df16fc69bac5338b89497a5b4fb91489e2dcb79dc06ac2b5' \
     "$SCRIPT_DIR/02_setup.sh"
 yq eval '.' "$DOTFILES_DIR/dot_config/private_gh/private_config.yml" >/dev/null
+yq eval '.' "$DOTFILES_DIR/dot_config/lazygit/config.yml" >/dev/null
+grep -q 'pager = "delta --navigate --line-numbers --paging=always"' \
+    "$DOTFILES_DIR/.chezmoi.toml.tmpl"
+grep -q 'description: Browse chezmoi live diff' \
+    "$DOTFILES_DIR/dot_config/lazygit/config.yml"
 if command -v luac >/dev/null 2>&1; then
     luac -p "$DOTFILES_DIR/dot_hammerspoon/init.lua"
     luac -p "$DOTFILES_DIR/dot_hammerspoon/window_chooser.lua"
@@ -61,29 +73,36 @@ validate_jsonc "$DOTFILES_DIR/private_Library/Application Support/Code/User/snip
 validate_jsonc "$DOTFILES_DIR/dot_config/waybar/config.jsonc"
 jq empty "$DOTFILES_DIR/dot_config/Code/User/keybindings.json"
 
-for package_file in "$DOTFILES_DIR"/packages/fedora-*.txt; do
+for package_file in "$DOTFILES_DIR"/packages/*-common.txt "$DOTFILES_DIR"/packages/*-sway.txt; do
     if read_package_file "$package_file" | LC_ALL=C sort | uniq -d | grep -q .; then
-        printf 'duplicate Fedora package in %s\n' "$package_file" >&2
+        printf 'duplicate Linux package in %s\n' "$package_file" >&2
         exit 1
     fi
 done
-for package in atuin direnv pgcli tailscale; do
-    grep -q "^$package$" "$DOTFILES_DIR/packages/fedora-common.txt"
+for tool in atuin bat delta direnv eza fd glow shellcheck shfmt watchexec yq zoxide; do
+    grep -q "^$tool = \"latest\"$" "$DOTFILES_DIR/dot_config/mise/config.toml.tmpl"
 done
 if read_package_file "$DOTFILES_DIR/packages/vscode-extensions.txt" \
     | LC_ALL=C sort | uniq -d | grep -q .; then
-    printf 'duplicate VS Code extension in Fedora manifest\n' >&2
+    printf 'duplicate VS Code extension in Linux manifest\n' >&2
     exit 1
 fi
 grep -q '^baseurl=https://packages.microsoft.com/yumrepos/vscode$' \
     "$DOTFILES_DIR/packages/vscode.repo"
-comm -12 \
-    <(read_package_file "$DOTFILES_DIR/packages/fedora-common.txt" | LC_ALL=C sort) \
-    <(read_package_file "$DOTFILES_DIR/packages/fedora-sway.txt" | LC_ALL=C sort) \
-    | if grep -q .; then
-        printf 'Fedora package appears in both common and Sway manifests\n' >&2
-        exit 1
-    fi
+grep -q '^URIs: https://packages.microsoft.com/repos/code$' "$DOTFILES_DIR/packages/vscode.sources"
+grep -q '^URIs: https://mise.jdx.dev/deb$' "$DOTFILES_DIR/packages/mise.sources"
+grep -q '^Exec={{HOME}}/.local/opt/vscode/code %F$' "$DOTFILES_DIR/packages/code.desktop.in"
+grep -q 'update.code.visualstudio.com/latest/\$vscode_platform/stable' "$SCRIPT_DIR/02_setup.sh"
+for distro in fedora debian ubuntu arch; do
+    grep -q '^tar$' "$DOTFILES_DIR/packages/$distro-common.txt"
+    comm -12 \
+        <(read_package_file "$DOTFILES_DIR/packages/$distro-common.txt" | LC_ALL=C sort) \
+        <(read_package_file "$DOTFILES_DIR/packages/$distro-sway.txt" | LC_ALL=C sort) \
+        | if grep -q .; then
+            printf '%s package appears in both common and Sway manifests\n' "$distro" >&2
+            exit 1
+        fi
+done
 grep -q '^ExecStart=/usr/local/bin/kanata --cfg {{HOME}}/.config/kanata/kanata.kbd$' \
     "$DOTFILES_DIR/systemd/kanata.service.tmpl"
 grep -q 'Skipping Kanata installation (SKIP_STEPS includes kanata)' "$SCRIPT_DIR/02_setup.sh"
@@ -102,6 +121,21 @@ SKIP_STEPS='github, kanata' bash -c '
     source "$1"
     skip_step github && skip_step kanata && ! skip_step nonexistent
 ' validate-skip-steps "$SCRIPT_DIR/lib.sh"
+
+for distro_family in fedora:fedora debian:debian ubuntu:debian arch:arch; do
+    distro="${distro_family%%:*}"
+    family="${distro_family##*:}"
+    LINUX_DISTRO_OVERRIDE="$distro" LINUX_FAMILY_OVERRIDE="$family" \
+        PROFILE=personal bash -c '
+            source "$1"
+            test "$LINUX_DISTRO" = "$2"
+            test "$LINUX_FAMILY" = "$3"
+            common_manifest="$(linux_package_files | sed -n "1p")"
+            sway_manifest="$(linux_package_files | sed -n "2p")"
+            test "$common_manifest" = "$DOTFILES_DIR/packages/$2-common.txt"
+            test "$sway_manifest" = "$DOTFILES_DIR/packages/$2-sway.txt"
+        ' validate-linux-family "$SCRIPT_DIR/lib.sh" "$distro" "$family"
+done
 
 defaults_home="$tmp_dir/defaults-home"
 mkdir -p "$defaults_home"
@@ -166,7 +200,7 @@ fi
 rendered_mise="$tmp_dir/mise-personal.toml"
 PROFILE=personal chezmoi --config "$tmp_dir/personal.toml" --source "$DOTFILES_DIR" \
     execute-template < "$DOTFILES_DIR/dot_config/mise/config.toml.tmpl" > "$rendered_mise"
-if grep -Eq '^(starship|lazygit|yazi|"gem:tmuxinator"|"pipx:mitmproxy") = ' "$rendered_mise"; then
+if grep -Eq '^(atuin|bat|delta|direnv|eza|fd|glow|starship|lazygit|shellcheck|shfmt|yazi|watchexec|yq|zoxide|"gem:tmuxinator"|"pipx:(mitmproxy|pgcli)") = ' "$rendered_mise"; then
     printf 'macOS mise config unexpectedly includes Linux-managed tools\n' >&2
     exit 1
 fi

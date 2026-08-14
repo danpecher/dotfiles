@@ -1,4 +1,4 @@
-# Cross-platform VS Code extensions for Fedora.
+# Cross-platform VS Code/Code OSS extensions for Linux.
 adpyke.vscode-sql-formatter
 asvetliakov.vscode-neovim
 catppuccin.catppuccin-vsc

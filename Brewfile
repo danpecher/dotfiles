@@ -34,6 +34,8 @@ brew "mas"               # Mac App Store CLI
 brew "kanata"            # Keyboard remapping
 brew "atuin"             # Searchable, structured shell history
 brew "direnv"            # Per-directory environments
+brew "dockutil"          # Declarative Dock management
+brew "duti"              # Default application and URL-scheme management
 brew "mosh"              # Resilient remote shell
 brew "navi"              # Interactive command cheatsheets
 brew "mole"              # Mac cleanup tool; protected paths are managed by chezmoi
@@ -69,6 +71,9 @@ brew "neovim"            # Modern vim
 brew "rust"              # Rust toolchain
 brew "lazygit"           # Terminal UI for git
 brew "git-delta"         # Better git diffs
+brew "shellcheck"        # Shell script static analysis
+brew "shfmt"             # Shell script formatter
+brew "watchexec"         # Re-run commands when files change
 brew "jetbrains/utils/kotlin-lsp"
 brew "xcode-build-server"
 brew "xcodes"            # Xcode version manager
@@ -89,6 +94,7 @@ cask "visual-studio-code"
 cask "android-studio"
 cask "fork"
 cask "orbstack"          # Docker alternative
+cask "utm"               # QEMU-based virtual machines
 cask "tableplus"         # Database GUI
 cask "rapidapi"          # API client
 cask "zed@preview"

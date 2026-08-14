@@ -1,4 +1,4 @@
-# Fedora Sway workstation configuration managed by chezmoi.
+# Portable Sway workstation configuration managed by chezmoi.
 set $mod Mod4
 set $left h
 set $down j
@@ -9,23 +9,32 @@ set $menu rofi -show drun -show-icons
 
 font pango:JetBrainsMono Nerd Font Mono 10
 floating_modifier $mod normal
-default_border pixel 2
-default_floating_border pixel 2
-gaps inner 8
-gaps outer 4
+default_border pixel 3
+default_floating_border pixel 3
+gaps inner 12
+gaps outer 8
 smart_gaps on
 smart_borders on
 
-output * bg #282828 solid_color
+# Gruvbox window hierarchy. Vanilla Sway has crisp corners by design; the
+# stronger focused edge and roomier gaps keep that geometry intentional.
+client.focused          #83a598 #3c3836 #fbf1c7 #83a598 #83a598
+client.focused_inactive #504945 #32302f #d5c4a1 #504945 #504945
+client.unfocused        #3c3836 #282828 #a89984 #3c3836 #3c3836
+client.urgent           #fb4934 #cc241d #fbf1c7 #fb4934 #fb4934
+client.placeholder      #3c3836 #282828 #a89984 #3c3836 #3c3836
+client.background       #1d2021
 
-# Session services supplied by the Fedora Sway package set.
+output * bg "$HOME/.local/share/wallpapers/gruvbox-horizon.svg" fill #1d2021
+
+# Session services supplied by the selected distribution's Sway package set.
 exec foot --server
 exec dunst
 exec lxpolkit
 exec nm-applet --indicator
 exec kanshi
 exec mkdir -p "$HOME/Pictures/Screenshots"
-exec swayidle -w timeout 300 'swaylock -f -c 282828' timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' before-sleep 'swaylock -f -c 282828'
+exec swayidle -w timeout 300 'swaylock -f -c 1d2021' timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' before-sleep 'swaylock -f -c 1d2021'
 exec_always dbus-update-activation-environment --systemd WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
 exec_always systemctl --user import-environment WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
 
@@ -43,7 +52,7 @@ bindsym $mod+d exec $menu
 bindsym $mod+Shift+q kill
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit Sway?' -b 'Exit' 'swaymsg exit'
-bindsym $mod+Ctrl+l exec swaylock -f -c 282828
+bindsym $mod+Ctrl+l exec swaylock -f -c 1d2021
 
 bindsym $mod+$left focus left
 bindsym $mod+$down focus down
@@ -104,8 +113,8 @@ bindsym $mod+Shift+8 move container to workspace number $ws8
 bindsym $mod+Shift+9 move container to workspace number $ws9
 bindsym $mod+Shift+0 move container to workspace number $ws10
 
-bindsym Print exec grimshot save output "$HOME/Pictures/Screenshots/$(date +'%Y-%m-%d_%H-%M-%S').png"
-bindsym Shift+Print exec grimshot save area "$HOME/Pictures/Screenshots/$(date +'%Y-%m-%d_%H-%M-%S').png"
+bindsym Print exec "$HOME/bin/sway-screenshot" output
+bindsym Shift+Print exec "$HOME/bin/sway-screenshot" area
 bindsym XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
 bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
 bindsym XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
@@ -132,5 +141,3 @@ bindsym $mod+r mode "resize"
 bar {
     swaybar_command waybar
 }
-
-include /etc/sway/config.d/*

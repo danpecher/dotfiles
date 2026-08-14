@@ -1,0 +1,29 @@
+# Portable baseline for Arch-family distributions. User-space CLI tools with
+# inconsistent package names or availability are installed through mise.
+base-devel
+btop
+chezmoi
+cmake
+code
+curl
+fzf
+github-cli
+git
+git-lfs
+jq
+mise
+neovim
+openssh
+postgresql-libs
+procps-ng
+ripgrep
+rust
+tailscale
+tar
+tmux
+trash-cli
+tree
+unzip
+zsh
+zsh-autosuggestions
+zsh-syntax-highlighting

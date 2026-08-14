@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Interactive Fedora bootstrap. Fedora Sway Spin is preferred, but this also
-# adds the Sway package set to a regular Fedora Workstation installation.
+# Interactive Linux bootstrap for Fedora, Debian/Ubuntu, and Arch families.
+# The personal profile installs the same portable Sway desktop on each.
 
 set -euo pipefail
 
@@ -45,19 +45,61 @@ dotfiles_repo_url() {
     fi
 }
 
-[[ "$(uname -s)" == Linux && -f /etc/fedora-release ]] || \
-    error "This bootstrap supports Fedora Linux only."
+detect_linux_family() {
+    # shellcheck disable=SC1091
+    source /etc/os-release
+    case " ${ID:-} ${ID_LIKE:-} " in
+        *" fedora "* | *" rhel "*) printf 'fedora\n' ;;
+        *" debian "* | *" ubuntu "*) printf 'debian\n' ;;
+        *" arch "*) printf 'arch\n' ;;
+        *) return 1 ;;
+    esac
+}
+
+install_bootstrap_packages() {
+    case "$LINUX_FAMILY" in
+        fedora)
+            sudo dnf upgrade --refresh -y
+            sudo dnf install -y chezmoi curl gh git openssh-clients
+            ;;
+        debian)
+            sudo apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                curl gh git openssh-client
+            if ! command -v chezmoi >/dev/null 2>&1; then
+                temp_installer="$(mktemp "${TMPDIR:-/tmp}/chezmoi-install.XXXXXX")"
+                curl -fsLS https://get.chezmoi.io -o "$temp_installer"
+                install -d -m 0755 "$HOME/.local/bin"
+                sh "$temp_installer" -b "$HOME/.local/bin"
+                rm -f "$temp_installer"
+            fi
+            export PATH="$HOME/.local/bin:$PATH"
+            ;;
+        arch)
+            sudo pacman -Syu --needed --noconfirm \
+                chezmoi curl github-cli git openssh
+            ;;
+    esac
+}
+
+[[ "$(uname -s)" == Linux && -r /etc/os-release ]] || \
+    error "This bootstrap requires Linux with /etc/os-release."
+LINUX_FAMILY="$(detect_linux_family || true)"
+[[ -n "$LINUX_FAMILY" ]] || \
+    error "Supported Linux families are Fedora, Debian/Ubuntu, and Arch."
+# shellcheck disable=SC1091
+source /etc/os-release
 [[ -t 0 ]] || error "This script requires an interactive terminal for sudo and review prompts."
 
 echo ""
 echo "=========================================="
-echo "  Fedora Sway Bootstrap"
+echo "  ${PRETTY_NAME:-Linux} Sway Bootstrap"
 echo "=========================================="
 echo ""
 
-info "Updating Fedora package metadata and installing bootstrap tools..."
-sudo dnf upgrade --refresh -y
-sudo dnf install -y chezmoi curl gh git openssh-clients
+info "Updating package metadata and installing bootstrap tools..."
+install_bootstrap_packages
 
 if skip_step github; then
     warn "Skipping SSH key setup and GitHub authentication"
@@ -113,8 +155,8 @@ PROFILE="$PROFILE" SKIP_STEPS="$SKIP_STEPS" \
     "$DOTFILES_DIR/scripts/02_setup.sh" bootstrap
 
 echo ""
-success "Fedora bootstrap complete"
+success "${PRETTY_NAME:-Linux} bootstrap complete"
 if [[ "$PROFILE" == personal ]]; then
-    info "Choose Sway from the display manager, or install Fedora Sway Spin directly on the next machine."
+    info "Choose Sway from the display manager at your next login."
 fi
 info "Log out and back in if the login shell or desktop session changed."

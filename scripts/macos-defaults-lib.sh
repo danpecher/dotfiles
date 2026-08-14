@@ -19,6 +19,8 @@ normalized_default_value() {
         int) printf '%d' "$value" ;;
         float) awk -v value="$value" 'BEGIN { printf "%.8g", value + 0 }' ;;
         string)
+            # Match the literal ~/ prefix; expansion happens explicitly.
+            # shellcheck disable=SC2088
             case "$value" in
                 '~/'*) printf '%s/%s' "$HOME" "${value#\~/}" ;;
                 *) printf '%s' "$value" ;;

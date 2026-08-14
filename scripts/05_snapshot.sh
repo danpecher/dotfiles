@@ -31,9 +31,22 @@ if command -v brew >/dev/null 2>&1; then
     brew services list 2>&1 | sed 's/[[:space:]]*$//' > "$OUT_DIR/brew-services.txt" || true
 fi
 
-if [[ "$OS" == Linux && -f /etc/fedora-release ]]; then
-    capture fedora-packages.txt rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n'
-    capture system-services.txt systemctl list-units --type=service --all
+if [[ "$OS" == Linux && -n "$LINUX_FAMILY" ]]; then
+    case "$LINUX_FAMILY" in
+        fedora)
+            capture "$LINUX_DISTRO-packages.txt" rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n'
+            ;;
+        debian)
+            capture "$LINUX_DISTRO-packages.txt" dpkg-query -W \
+                '-f=${binary:Package}\t${Version}\n'
+            ;;
+        arch)
+            capture "$LINUX_DISTRO-packages.txt" pacman -Q
+            ;;
+    esac
+    if command -v systemctl >/dev/null 2>&1; then
+        capture system-services.txt systemctl list-units --type=service --all
+    fi
 fi
 
 if [[ "$OS" == Darwin ]]; then
@@ -44,13 +57,9 @@ if [[ "$OS" == Darwin ]]; then
     fi
 fi
 
-if command -v jq >/dev/null 2>&1 && [[ -d "$HOME/.vscode/extensions" ]]; then
-    {
-        for manifest in "$HOME"/.vscode/extensions/*/package.json; do
-            [[ -f "$manifest" ]] || continue
-            jq -r 'select(.publisher and .name and .version) | "\(.publisher).\(.name)@\(.version)"' "$manifest"
-        done
-    } | LC_ALL=C sort -u > "$OUT_DIR/vscode-extensions.txt"
+if command -v code >/dev/null 2>&1; then
+    code --list-extensions --show-versions 2>/dev/null | LC_ALL=C sort -u \
+        > "$OUT_DIR/vscode-extensions.txt" || true
 fi
 
 if command -v mise >/dev/null 2>&1; then

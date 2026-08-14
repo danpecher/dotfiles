@@ -10,13 +10,19 @@ are declared by package name. Homebrew and the relevant application updater
 choose the installed version. Review package additions and removals manually;
 cleanup remains preview-only.
 
-Fedora RPMs are likewise rolling within the installed Fedora release and are
-declared by package name under `packages/`. Fedora upgrades remain an explicit
-system operation. mise comes from its maintainer's COPR, and VS Code comes from
-Microsoft's official RPM repository. Linux resolves Starship, LazyGit, Yazi,
-tmuxinator, and mitmproxy as `latest` through mise; the latter two use mise's
-isolated RubyGems and pipx backends. Existing machines update them only when
+Native Linux packages roll within the installed distribution release and are
+declared by package name under `packages/`. Distribution upgrades remain an
+explicit system operation. Linux installs mise and VS Code/Code OSS through
+distribution-specific adapters. Portable CLI tools whose native names or
+availability differ—including Atuin, Bat, Delta, direnv, eza, fd, Glow,
+Starship, LazyGit, ShellCheck, shfmt, Watchexec, Yazi, yq, and zoxide—resolve as
+`latest` through mise. tmuxinator uses mise's RubyGems backend; mitmproxy and
+pgcli use its isolated pipx backend. Existing machines update them only when
 `mise upgrade` is run; there is no unattended updater.
+
+Fedora ARM64 uses Microsoft's rolling stable VS Code archive because Microsoft
+does not publish an ARM64 RPM. Upgrade it explicitly with
+`FORCE_VSCODE_ARCHIVE=1 make packages`; there is no background updater.
 
 ## Exact pins
 

@@ -23,21 +23,15 @@ if [[ "${SKIP_KANATA:-0}" == 1 ]]; then
     SKIP_STEPS="${SKIP_STEPS:+$SKIP_STEPS,}kanata"
 fi
 ACTION="${1:-bootstrap}"
-OS="$(uname -s)"
+source "$SCRIPT_DIR/lib.sh"
 
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
-skip_step() {
-    case ",${SKIP_STEPS// /,}," in
-        *,"$1",*) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-# Ensure Homebrew is in PATH on macOS. Fedora uses dnf instead.
+# Ensure Homebrew is in PATH on macOS. Linux uses a detected native package
+# manager through the shared platform helpers.
 if [[ "$OS" == Darwin ]]; then
     if ! command -v brew &>/dev/null; then
         error "Homebrew not found. Run 01_bootstrap.sh first."
@@ -47,8 +41,8 @@ if [[ "$OS" == Darwin ]]; then
     elif [[ -f "/usr/local/bin/brew" ]]; then
         eval "$(/usr/local/bin/brew shellenv)"
     fi
-elif [[ "$OS" != Linux || ! -f /etc/fedora-release ]]; then
-    error "Unsupported platform. This setup supports macOS and Fedora Linux."
+elif [[ "$OS" != Linux || -z "$LINUX_FAMILY" ]]; then
+    error "Unsupported platform. Linux support requires Fedora, Debian/Ubuntu, or Arch."
 fi
 
 echo ""
@@ -119,14 +113,6 @@ setup_github_ssh() {
     fi
 }
 
-brewfile_for_profile() {
-    case "$PROFILE" in
-        personal|full) printf '%s/Brewfile\n' "$DOTFILES_DIR" ;;
-        minimal|work) printf '%s/Brewfile.minimal\n' "$DOTFILES_DIR" ;;
-        *) error "Unknown profile: $PROFILE" ;;
-    esac
-}
-
 # Install packages from the selected Brewfile. This is additive; cleanup is a
 # separate preview-only workflow.
 install_macos_packages() {
@@ -158,31 +144,143 @@ install_macos_packages() {
     fi
 }
 
-fedora_package_files() {
-    printf '%s/packages/fedora-common.txt\n' "$DOTFILES_DIR"
-    if [[ "$PROFILE" == personal || "$PROFILE" == full ]]; then
-        printf '%s/packages/fedora-sway.txt\n' "$DOTFILES_DIR"
-    fi
+configure_debian_repositories() {
+    local temp_dir release_file tailscale_distribution tailscale_codename
+    temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/linux-repositories.XXXXXX")"
+    release_file="${OS_RELEASE_FILE:-/etc/os-release}"
+    # shellcheck disable=SC1090
+    source "$release_file"
+
+    sudo apt-get update
+    sudo apt-get install -y ca-certificates curl gnupg
+    sudo install -d -m 0755 /etc/apt/keyrings /usr/share/keyrings
+
+    info "Enabling the official mise APT repository..."
+    curl -L --fail --silent --show-error \
+        -o "$temp_dir/mise-archive-keyring.pub" https://mise.jdx.dev/gpg-key.pub
+    sudo install -o root -g root -m 0644 "$temp_dir/mise-archive-keyring.pub" \
+        /etc/apt/keyrings/mise-archive-keyring.pub
+    sudo install -o root -g root -m 0644 "$DOTFILES_DIR/packages/mise.sources" \
+        /etc/apt/sources.list.d/mise.sources
+
+    info "Enabling the official Microsoft VS Code APT repository..."
+    curl -L --fail --silent --show-error \
+        -o "$temp_dir/microsoft.asc" https://packages.microsoft.com/keys/microsoft.asc
+    gpg --dearmor --yes --output "$temp_dir/microsoft.gpg" "$temp_dir/microsoft.asc"
+    sudo install -o root -g root -m 0644 "$temp_dir/microsoft.gpg" \
+        /usr/share/keyrings/microsoft.gpg
+    sudo install -o root -g root -m 0644 "$DOTFILES_DIR/packages/vscode.sources" \
+        /etc/apt/sources.list.d/vscode.sources
+
+    case "${ID:-}" in
+        ubuntu)
+            tailscale_distribution=ubuntu
+            tailscale_codename="${VERSION_CODENAME:-}"
+            ;;
+        debian)
+            tailscale_distribution=debian
+            tailscale_codename="${VERSION_CODENAME:-}"
+            ;;
+        *)
+            tailscale_distribution=ubuntu
+            tailscale_codename="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
+            ;;
+    esac
+    [[ -n "$tailscale_codename" ]] || error "Cannot determine the distro codename for Tailscale"
+    info "Enabling the official Tailscale APT repository..."
+    curl -L --fail --silent --show-error \
+        -o "$temp_dir/tailscale.gpg" \
+        "https://pkgs.tailscale.com/stable/$tailscale_distribution/$tailscale_codename.noarmor.gpg"
+    curl -L --fail --silent --show-error \
+        -o "$temp_dir/tailscale.list" \
+        "https://pkgs.tailscale.com/stable/$tailscale_distribution/$tailscale_codename.tailscale-keyring.list"
+    sudo install -o root -g root -m 0644 "$temp_dir/tailscale.gpg" \
+        /usr/share/keyrings/tailscale-archive-keyring.gpg
+    sudo install -o root -g root -m 0644 "$temp_dir/tailscale.list" \
+        /etc/apt/sources.list.d/tailscale.list
+    rm -rf "$temp_dir"
+    sudo apt-get update
 }
 
-install_fedora_packages() {
+configure_linux_repositories() {
+    case "$LINUX_FAMILY" in
+        fedora)
+            info "Enabling the official mise COPR for Fedora..."
+            sudo dnf install -y dnf-plugins-core
+            sudo dnf copr enable -y jdxcode/mise
+            info "Enabling the official Microsoft VS Code repository..."
+            sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+            sudo install -o root -g root -m 0644 \
+                "$DOTFILES_DIR/packages/vscode.repo" /etc/yum.repos.d/vscode.repo
+            ;;
+        debian) configure_debian_repositories ;;
+        arch) ;;
+        *) error "Unsupported Linux family: $LINUX_FAMILY" ;;
+    esac
+}
+
+install_linux_packages() {
     local package_file
     local -a packages=()
-    for package_file in $(fedora_package_files); do
+    while IFS= read -r package_file; do
         while IFS= read -r package; do
             [[ -n "$package" ]] && packages+=("$package")
         done < <(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' "$package_file")
-    done
-    info "Enabling the official mise COPR for Fedora..."
-    sudo dnf install -y dnf-plugins-core
-    sudo dnf copr enable -y jdxcode/mise
-    info "Enabling the official Microsoft VS Code repository..."
-    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-    sudo install -o root -g root -m 0644 \
-        "$DOTFILES_DIR/packages/vscode.repo" /etc/yum.repos.d/vscode.repo
-    info "Installing ${#packages[@]} packages with dnf..."
-    sudo dnf install -y "${packages[@]}"
-    success "Fedora packages installed"
+    done < <(linux_package_files)
+
+    configure_linux_repositories
+    info "Installing ${#packages[@]} packages for $LINUX_DISTRO..."
+    case "$LINUX_FAMILY" in
+        fedora) sudo dnf install -y "${packages[@]}" ;;
+        debian) sudo apt-get install -y "${packages[@]}" ;;
+        arch) sudo pacman -Syu --needed --noconfirm "${packages[@]}" ;;
+    esac
+    success "$LINUX_DISTRO packages installed"
+}
+
+install_fedora_vscode_archive() {
+    local vscode_platform archive temp_dir install_dir desktop_file
+    case "$(uname -m)" in
+        aarch64 | arm64) vscode_platform=linux-arm64 ;;
+        *) error "No VS Code archive mapping for architecture: $(uname -m)" ;;
+    esac
+
+    temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/vscode.XXXXXX")"
+    archive="$temp_dir/vscode.tar.gz"
+    install_dir="$HOME/.local/opt/vscode"
+    desktop_file="$HOME/.local/share/applications/code.desktop"
+    info "Installing the current Microsoft VS Code $vscode_platform archive..."
+    curl -L --fail --silent --show-error \
+        -o "$archive" "https://update.code.visualstudio.com/latest/$vscode_platform/stable"
+    rm -rf "$install_dir"
+    install -d -m 0755 "$install_dir" "$HOME/.local/bin" "$(dirname "$desktop_file")"
+    tar -xzf "$archive" --strip-components=1 -C "$install_dir"
+    ln -sfn "$install_dir/bin/code" "$HOME/.local/bin/code"
+    sed "s|{{HOME}}|$HOME|g" "$DOTFILES_DIR/packages/code.desktop.in" > "$temp_dir/code.desktop"
+    install -m 0644 "$temp_dir/code.desktop" "$desktop_file"
+    rm -rf "$temp_dir"
+    success "Microsoft VS Code installed under ~/.local/opt/vscode"
+}
+
+install_linux_editor() {
+    [[ "$OS" == Linux ]] || return
+    if command -v code >/dev/null 2>&1; then
+        if [[ "$LINUX_FAMILY" != fedora || "$(uname -m)" == x86_64 ||
+            "${FORCE_VSCODE_ARCHIVE:-0}" != 1 ]]; then
+            return
+        fi
+    fi
+    case "$LINUX_FAMILY" in
+        fedora)
+            case "$(uname -m)" in
+                x86_64) sudo dnf install -y code ;;
+                *) install_fedora_vscode_archive ;;
+            esac
+            ;;
+        debian | arch)
+            error "The declared editor package did not provide the 'code' command"
+            ;;
+    esac
 }
 
 setup_vscode_extensions() {
@@ -193,7 +291,9 @@ setup_vscode_extensions() {
     }
     info "Installing declared VS Code extensions..."
     while IFS= read -r extension; do
-        code --install-extension "$extension"
+        if ! code --install-extension "$extension"; then
+            warn "Could not install VS Code extension: $extension"
+        fi
     done < <(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' \
         "$DOTFILES_DIR/packages/vscode-extensions.txt")
     success "VS Code extensions installed"
@@ -263,7 +363,8 @@ install_packages() {
     if [[ "$OS" == Darwin ]]; then
         install_macos_packages
     else
-        install_fedora_packages
+        install_linux_packages
+        install_linux_editor
         install_linux_nerd_font
         install_linux_kanata
     fi

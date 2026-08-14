@@ -23,9 +23,11 @@ systemd/**
 .aerospace.toml
 
 {{ if eq .chezmoi.os "darwin" -}}
-# Fedora/Sway targets.
+# Linux/Sway targets.
 .config/Code
 .config/Code/**
+.config/Code - OSS
+.config/Code - OSS/**
 .config/dunst
 .config/dunst/**
 .config/foot
@@ -40,6 +42,9 @@ systemd/**
 .config/sway/**
 .config/waybar
 .config/waybar/**
+.local/share/wallpapers
+.local/share/wallpapers/**
+bin/sway-screenshot
 {{ else if eq .chezmoi.os "linux" -}}
 # macOS-only targets.
 Library
@@ -78,4 +83,7 @@ bin/ios-build
 .config/sway/**
 .config/waybar
 .config/waybar/**
+.local/share/wallpapers
+.local/share/wallpapers/**
+bin/sway-screenshot
 {{ end -}}

@@ -22,7 +22,7 @@ separate secret/data backup:
   `make services` refuses to start Kanata while mappings remain in the selected
   Karabiner profile; after they are disabled it enables Kanata at boot through
   the root Homebrew service.
-- On Fedora, Kanata runs as a root systemd service and loads `uinput` at boot;
+- On supported Linux distributions, Kanata runs as a root systemd service and loads `uinput` at boot;
   this avoids granting the interactive user broad access to all input devices.
 - npm authentication. Keep tokens out of `.zshenv`, `.npmrc`, and this repository;
   inject `NPM_TOKEN` from a password manager or the macOS Keychain instead.

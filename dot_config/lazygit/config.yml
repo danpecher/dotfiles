@@ -4,3 +4,10 @@ gui:
     - [branches, remotes, tags]
     - [commits, reflog]
     - [worktrees, stash]
+
+customCommands:
+  - key: <c-x>
+    context: global
+    description: Browse chezmoi live diff
+    command: 'chezmoi --source "$HOME/Code/dotfiles" diff --pager "delta --navigate --line-numbers --paging=always"'
+    output: terminal
