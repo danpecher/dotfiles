@@ -59,6 +59,7 @@ listview {
     fixed-height: false;
     spacing: 4px;
     scrollbar: false;
+    border: 0px;
     background-color: transparent;
 }
 
@@ -70,18 +71,38 @@ element {
     text-color: @foreground;
 }
 
-element selected {
+element normal.normal,
+element alternate.normal,
+element normal.active,
+element alternate.active {
+    background-color: transparent;
+    text-color: @foreground;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    background-color: transparent;
+    text-color: @urgent;
+}
+
+element selected.normal,
+element selected.active {
     background-color: @accent;
     text-color: #1d2021;
 }
 
+element selected.urgent {
+    background-color: @urgent;
+    text-color: #fbf1c7;
+}
+
 element-icon {
     size: 28px;
-    background-color: transparent;
+    background-color: inherit;
 }
 
 element-text {
     vertical-align: 0.5;
-    background-color: transparent;
+    background-color: inherit;
     text-color: inherit;
 }
